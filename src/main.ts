@@ -1,5 +1,5 @@
 import { Application } from 'pixi.js';
-import { generateWorld } from './sim/world';
+import { loadWorld } from './data/loadWorld';
 import { MapRenderer } from './render/mapRenderer';
 
 async function start() {
@@ -7,7 +7,7 @@ async function start() {
   document.body.style.overflow = 'hidden';
   document.body.style.background = '#101820';
 
-  const world = generateWorld(1);
+  const world = await loadWorld();
 
   const app = new Application();
   await app.init({ resizeTo: window, background: '#101820', preference: 'webgl', antialias: false });
@@ -16,24 +16,25 @@ async function start() {
   const map = new MapRenderer(world);
   app.stage.addChild(map.view);
 
-  // Camera: We move and scale container with map
+  // Camera: pan and zoom by moving and scaling the map container.
   const fit = Math.min(window.innerWidth / world.width, window.innerHeight / world.height);
   map.view.scale.set(fit);
+  map.setZoom(fit);
   map.view.position.set(
     (window.innerWidth - world.width * fit) / 2,
     (window.innerHeight - world.height * fit) / 2,
   );
 
-  // Panel with information about the selected province.
+  // Info panel for the selected province.
   const info = document.createElement('div');
   info.style.cssText =
     'position:fixed;left:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;pointer-events:none';
-  info.textContent = 'Click on a province. Wheel = zoom, drag = pan.';
+  info.textContent = 'Click a province. Mouse wheel = zoom, drag = pan.';
   document.body.appendChild(info);
 
   const canvas = app.canvas as HTMLCanvasElement;
 
-  // Zooming with mouse wheel, keeping the point under the cursor fixed.
+  // Zoom with the mouse wheel around the cursor.
   canvas.addEventListener(
     'wheel',
     (e) => {
@@ -46,11 +47,12 @@ async function start() {
         e.clientY - (e.clientY - map.view.y) * k,
       );
       map.view.scale.set(newScale);
+      map.setZoom(newScale);
     },
     { passive: false },
   );
 
-  // Mouse move + click: dragging the map, or clicking on a province to select it.
+  // Drag to pan; a short click selects a province.
   let dragging = false;
   let moved = 0;
   let lastX = 0;
@@ -78,12 +80,19 @@ async function start() {
     const local = map.view.toLocal({ x: e.clientX, y: e.clientY });
     const id = map.provinceAt(local.x, local.y);
     map.setSelected(id);
-    if (id < 0) {
-      info.textContent = 'Outside the map';
+    if (id <= 0) {
+      info.textContent = id === 0 ? 'Sea' : 'Outside the map';
       return;
     }
     const p = world.provinces[id];
-    info.textContent = `Province #${id} | owner: ${world.countries[p.owner].name} | neighbors: ${p.neighbors.length}`;
+    const owner = world.countries[p.owner];
+    const overlord = owner.overlord !== null ? ` (subject of ${world.countries[owner.overlord].name})` : '';
+    const state = world.states[p.state];
+    if (owner.id === 0) {
+      info.textContent = `${state.name} (sea) | sea province #${id} | neighbors: ${p.neighbors.length}`;
+      return;
+    }
+    info.textContent = `${state.name} | province #${id} | owner: ${owner.name}${overlord} | neighbors: ${p.neighbors.length}`;
   });
 }
 
