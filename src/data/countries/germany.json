@@ -1,0 +1,250 @@
+{
+  "tag": "GER",
+  "name": "German Reich",
+  "mapNames": ["Germany"],
+  "accent": "#6a6f58",
+  "ideology": "fascism",
+  "faction": "Axis",
+  "leader": {
+    "name": "Konrad Voss",
+    "title": "Reichskanzler",
+    "portrait": "voss",
+    "biography": "A former signals officer and party organiser, Voss consolidated the nationalist bloc after the 1933 emergency decrees. He governs through a cabinet of technocrats and soldiers, and has made rearmament the central project of the state.",
+    "traits": [
+      { "name": "Consolidated Rule", "description": "The cabinet answers to the chancellery, not the Reichstag.", "icon": "gov" },
+      { "name": "Rearmament Advocate", "description": "+10% military factory construction speed.", "icon": "factory" },
+      { "name": "Distrust of Moscow", "description": "Diplomatic relations with the Soviet Union are permanently strained.", "icon": "swords" }
+    ]
+  },
+  "coalition": "National Unity Front",
+  "legitimacy": 0.74,
+  "parties": [
+    { "name": "National Unity Front", "ideology": "fascism", "popularity": 0.62, "inGovernment": true, "description": "The governing movement: a coalition of nationalist associations, ex-officers and industrial interest groups." },
+    { "name": "Social Democratic Party", "ideology": "democratic", "popularity": 0.18, "inGovernment": false, "description": "The largest opposition bloc, reduced but still rooted in the industrial cities and trade unions." },
+    { "name": "Communist Party", "ideology": "communism", "popularity": 0.12, "inGovernment": false, "description": "Operating semi-legally through factory cells and front organisations." },
+    { "name": "Centre Party", "ideology": "neutrality", "popularity": 0.08, "inGovernment": false, "description": "Catholic regional politics, cautious of both the government and the far left." }
+  ],
+  "stats": {
+    "politicalPower": 95,
+    "stability": 0.54,
+    "warSupport": 0.41,
+    "manpower": 1420000,
+    "treasury": 1850,
+    "income": 86,
+    "expenses": 72
+  },
+  "industry": {
+    "civilianFactories": 38,
+    "militaryFactories": 22,
+    "dockyards": 6,
+    "infrastructure": 7,
+    "resources": { "steel": 240, "oil": 12, "rubber": 26, "aluminium": 34, "tungsten": 8, "chromium": 2 },
+    "trade": [
+      { "country": "Sweden", "resource": "steel", "amount": 60, "direction": "import" },
+      { "country": "Romania", "resource": "oil", "amount": 30, "direction": "import" },
+      { "country": "Netherlands", "resource": "rubber", "amount": 18, "direction": "import" }
+    ]
+  },
+  "army": {
+    "commanders": [
+      { "name": "Feldmarschall Otto Reinecke", "rank": "Feldmarschall", "trait": "Infantry Leader", "attack": 4, "defense": 5, "planning": 4, "logistics": 3, "portrait": "reinecke" },
+      { "name": "General Kurt Halbach", "rank": "General der Panzertruppe", "trait": "Panzer Leader", "attack": 5, "defense": 3, "planning": 4, "logistics": 2, "portrait": "halbach" },
+      { "name": "General Albrecht Mohn", "rank": "General der Infanterie", "trait": "Organiser", "attack": 3, "defense": 4, "planning": 5, "logistics": 4, "portrait": "mohn" }
+    ],
+    "divisions": [
+      { "name": "1. Infanterie-Division", "template": "Infantry Division", "type": "infantry", "experience": 0.28, "strength": 0.96, "location": "Berlin" },
+      { "name": "2. Infanterie-Division", "template": "Infantry Division", "type": "infantry", "experience": 0.24, "strength": 0.94, "location": "Stettin" },
+      { "name": "3. Infanterie-Division", "template": "Infantry Division", "type": "infantry", "experience": 0.22, "strength": 0.91, "location": "Königsberg" },
+      { "name": "4. Infanterie-Division", "template": "Infantry Division", "type": "infantry", "experience": 0.19, "strength": 0.88, "location": "Breslau" },
+      { "name": "1. Panzer-Division", "template": "Panzer Division", "type": "armor", "experience": 0.34, "strength": 0.93, "location": "Würzburg" },
+      { "name": "2. Panzer-Division", "template": "Panzer Division", "type": "armor", "experience": 0.31, "strength": 0.9, "location": "Münster" },
+      { "name": "1. Kavallerie-Division", "template": "Cavalry Division", "type": "cavalry", "experience": 0.15, "strength": 0.84, "location": "Dresden" },
+      { "name": "1. Gebirgs-Division", "template": "Mountain Division", "type": "mountaineer", "experience": 0.26, "strength": 0.92, "location": "München" }
+    ]
+  },
+  "advisors": [
+    {
+      "id": "ger_adv_kleist",
+      "name": "Walther Kleist",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "neutrality",
+      "portrait": "kleist",
+      "description": "A career diplomat from the eastern service who argues that German security lies in a continental bloc of small states.",
+      "bonus": "+0.15 political power per day",
+      "cost": 90,
+      "rates": { "ppPerDay": 0.15 }
+    },
+    {
+      "id": "ger_adv_brandt",
+      "name": "Ilse Brandt",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "fascism",
+      "portrait": "brandt",
+      "description": "Minister of propaganda and public welfare. Her organisation reaches every town hall and factory floor.",
+      "bonus": "-10% stability drift penalty, +2% stability",
+      "cost": 110,
+      "bundle": { "stability": 0.02 },
+      "rates": { "stabilityDrift": 0.01 }
+    },
+    {
+      "id": "ger_adv_reinecke",
+      "name": "Gen. Otto Reinecke",
+      "position": "Chief of the General Staff",
+      "slot": "staff",
+      "ideology": "fascism",
+      "portrait": "reinecke",
+      "description": "The army's chief planner, credited with the mobilisation schedule that underpins the rearmament programme.",
+      "bonus": "+12% construction speed, +5% factory output",
+      "cost": 120,
+      "rates": { "constructionSpeed": 0.12, "factoryOutput": 0.05 }
+    },
+    {
+      "id": "ger_adv_falk",
+      "name": "Erich Falk",
+      "position": "Head of Intelligence",
+      "slot": "intelligence",
+      "ideology": "authoritarian",
+      "portrait": "falk",
+      "description": "Runs the Abwehr's foreign section. His networks in Prague and Warsaw are considered the best in Europe.",
+      "bonus": "+1 operative slot, +10% decryption strength",
+      "cost": 100,
+      "rates": { "researchSpeed": 0.02 }
+    },
+    {
+      "id": "ger_adv_arndt",
+      "name": "Prof. Hans Arndt",
+      "position": "Military Theorist",
+      "slot": "theorist",
+      "ideology": "authoritarian",
+      "portrait": "arndt",
+      "description": "Professor of operational science at the war academy and an unapologetic advocate of fast, mechanised campaigns.",
+      "bonus": "+6% research speed",
+      "cost": 80,
+      "rates": { "researchSpeed": 0.06 }
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "ger_mod_reichsbank",
+      "name": "Reichsbank Credit Programme",
+      "icon": "coin",
+      "description": "Short-term treasury notes finance the defence programme; the machinery works, but it is not sustainable forever.",
+      "effect": "+8% construction speed, stability -2%",
+      "kind": "positive",
+      "rates": { "constructionSpeed": 0.08 }
+    },
+    {
+      "id": "ger_mod_stahlpakt",
+      "name": "Dual Alliance Clause",
+      "icon": "handshake",
+      "description": "Standing commitments to a southern ally keep the general staff planning for two fronts.",
+      "effect": "+0.05 political power per day",
+      "kind": "neutral",
+      "rates": { "ppPerDay": 0.05 }
+    },
+    {
+      "id": "ger_mod_fuel",
+      "name": "Fuel Shortage",
+      "icon": "oil",
+      "description": "Domestic oil fields cover a fraction of demand. Every mechanised division is tied to imports.",
+      "effect": "-10% motorised supply efficiency",
+      "kind": "negative"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "ger_dec_labour",
+      "name": "National Labour Service",
+      "icon": "people",
+      "category": "political",
+      "description": "Extend the compulsory labour service to build roads, drain marshes and bring new land into cultivation.",
+      "cost": 60,
+      "cooldown": 180,
+      "requirements": ["Stability above 45%", "Political power 60"],
+      "effects": [
+        { "text": "Manpower +45,000", "kind": "positive", "bundle": { "manpower": 45000 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ]
+    },
+    {
+      "id": "ger_dec_autobahn",
+      "name": "Motorway Programme",
+      "icon": "crane",
+      "category": "economic",
+      "description": "Authorise the first sections of the north-south motorway scheme. It will take years to pay back, but the construction ministry insists it will.",
+      "cost": 80,
+      "cooldown": 240,
+      "requirements": ["Treasury above 200"],
+      "effects": [
+        { "text": "Civilian factory +1", "kind": "positive", "bundle": { "civilianFactories": 1 } },
+        { "text": "Treasury -90", "kind": "negative", "bundle": { "treasury": -90 } },
+        { "text": "+8% construction speed while underway", "kind": "positive" }
+      ]
+    },
+    {
+      "id": "ger_dec_officers",
+      "name": "Expand the Officer Corps",
+      "icon": "crown",
+      "category": "military",
+      "description": "Open three new cadet academies and recall retired officers to the training establishment.",
+      "cost": 50,
+      "cooldown": 150,
+      "requirements": ["War support above 35%"],
+      "effects": [
+        { "text": "Manpower +25,000", "kind": "positive", "bundle": { "manpower": 25000 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ]
+    },
+    {
+      "id": "ger_dec_balkans",
+      "name": "Trade Mission to the Balkans",
+      "icon": "handshake",
+      "category": "foreign",
+      "description": "Send a commercial delegation to Bucharest and Belgrade to secure grain, oil and chrome in exchange for machinery and machine tools.",
+      "cost": 40,
+      "cooldown": 210,
+      "requirements": ["Political power 40"],
+      "effects": [
+        { "text": "Treasury +140", "kind": "positive", "bundle": { "treasury": 140 } },
+        { "text": "Political power +10", "kind": "positive", "bundle": { "politicalPower": 10 } }
+      ]
+    },
+    {
+      "id": "ger_dec_housing",
+      "name": "National Housing Programme",
+      "icon": "factory",
+      "category": "political",
+      "description": "Fund a public housing drive in the industrial cities to ease overcrowding and quiet criticism of the government.",
+      "cost": 75,
+      "cooldown": 270,
+      "requirements": ["Treasury above 300"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "Treasury -140", "kind": "negative", "bundle": { "treasury": -140 } }
+      ]
+    },
+    {
+      "id": "ger_dec_requisition",
+      "name": "Requisition Civilian Industry",
+      "icon": "gear",
+      "category": "economic",
+      "description": "Convert consumer plants to military contracts. Popularity will suffer, but the field army needs the capacity now.",
+      "cost": 75,
+      "cooldown": 300,
+      "requirements": ["Stability above 40%"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "Civilian factory -1", "kind": "negative", "bundle": { "civilianFactories": -1 } },
+        { "text": "Stability -3%", "kind": "negative", "bundle": { "stability": -0.03 } }
+      ]
+    }
+  ],
+  "researchSlots": 3,
+  "focusTree": "germany",
+  "agency": {
+    "name": "Abwehr",
+    "description": "The unified military intelligence service, with stations in every European capital and a growing cipher bureau."
+  }
+}

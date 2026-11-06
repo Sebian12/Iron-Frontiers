@@ -38,6 +38,8 @@ uniform sampler2D uPalette;  // RGB = color of the province owner, indexed by pr
 uniform sampler2D uMeta;     // R = owner id, G/B = low/high byte of the state id, indexed by province id
 uniform vec2 uSize;          // map size in texels
 uniform float uSelected;     // selected province id, -1 for none
+uniform float uHover;        // hovered province id, -1 for none
+uniform float uHighlightOwner; // country id to tint, -1 for none
 uniform float uZoom;         // current map scale (screen pixels per texel)
 
 int idAt(ivec2 p) {
@@ -146,6 +148,10 @@ void main() {
   }
 
   vec3 col = texelFetch(uPalette, ivec2(bestId & 255, bestId >> 8), 0).rgb;
+  if (uHighlightOwner >= 0.0 && ownerOf(bestId) == int(uHighlightOwner + 0.5)) {
+    col = mix(col, vec3(0.78, 0.65, 0.42), 0.38);
+  }
+  if (uHover >= 0.0 && bestId == int(uHover + 0.5)) { col = mix(col, vec3(1.0), 0.16); }
   if (uSelected >= 0.0 && bestId == int(uSelected + 0.5)) { col = mix(col, vec3(1.0), 0.4); }
 
   // Distance (in screen pixels) from the border between the two best candidates. The gradient
@@ -244,6 +250,8 @@ export class MapRenderer {
     this.uniforms = new UniformGroup({
       uSize: { value: new Float32Array([width, height]), type: 'vec2<f32>' },
       uSelected: { value: -1, type: 'f32' },
+      uHover: { value: -1, type: 'f32' },
+      uHighlightOwner: { value: -1, type: 'f32' },
       uZoom: { value: 1, type: 'f32' },
     });
 
@@ -287,6 +295,15 @@ export class MapRenderer {
 
   setSelected(id: number) {
     this.uniforms.uniforms.uSelected = id;
+  }
+
+  setHover(id: number) {
+    this.uniforms.uniforms.uHover = id;
+  }
+
+  /** Tints every province owned by the given country. Pass -1 to clear. */
+  setHighlightCountry(id: number) {
+    this.uniforms.uniforms.uHighlightOwner = id;
   }
 
   /** Tell the shader how far the map is zoomed in (it fades province borders in and out). */

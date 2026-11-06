@@ -1,0 +1,478 @@
+{
+  "country": "Soviet Union",
+  "focuses": [
+    {
+      "id": "sov_general_line",
+      "name": "The General Line",
+      "icon": "star",
+      "category": "political",
+      "description": "Confirm the party's leading role in the state and the primacy of the central committee over every commissariat.",
+      "history": "The general line was the formula through which every policy dispute was settled: once adopted, opposition was definitionally error.",
+      "days": 70,
+      "cost": 0,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +40", "kind": "positive", "bundle": { "politicalPower": 40 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "sov_party_discipline",
+      "name": "Party Discipline",
+      "icon": "shield",
+      "category": "political",
+      "description": "A verification campaign in the regional committees, replacing unreliable officials with loyal cadres.",
+      "days": 90,
+      "cost": 60,
+      "requirements": ["The General Line completed"],
+      "prerequisites": ["sov_general_line"],
+      "effects": [
+        { "text": "+0.1 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.1 } },
+        { "text": "Stability -2%", "kind": "negative", "bundle": { "stability": -0.02 } }
+      ],
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "sov_constitution",
+      "name": "The New Constitution",
+      "icon": "ballot",
+      "category": "political",
+      "description": "Publish a constitution guaranteeing universal suffrage and a bicameral legislature, with a single-party ballot.",
+      "history": "The 1936 constitution was among the most liberal documents in the world on paper; its guarantees were subordinate to party practice.",
+      "days": 110,
+      "cost": 75,
+      "requirements": ["Party Discipline completed"],
+      "prerequisites": ["sov_party_discipline"],
+      "effects": [
+        { "text": "Stability +5%", "kind": "positive", "bundle": { "stability": 0.05 } },
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } }
+      ],
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "sov_supreme_soviet",
+      "name": "The Supreme Soviet",
+      "icon": "gov",
+      "category": "political",
+      "description": "Institutionalise the legislature as the formal source of law, meeting twice a year and delegating in between.",
+      "days": 130,
+      "cost": 90,
+      "requirements": ["The New Constitution completed"],
+      "prerequisites": ["sov_constitution"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "+0.1 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.1 } }
+      ],
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "sov_five_year",
+      "name": "The Second Five Year Plan",
+      "icon": "factory",
+      "category": "economic",
+      "description": "Complete the industrial programme: steel, electricity, machine tools, and the plants that build the plants.",
+      "history": "The plans measured success in tonnage. The human and material costs were recorded separately, if at all.",
+      "days": 80,
+      "cost": 30,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Civilian factory +2", "kind": "positive", "bundle": { "civilianFactories": 2 } },
+        { "text": "+6% factory output", "kind": "positive", "rates": { "factoryOutput": 0.06 } }
+      ],
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "sov_heavy_industry",
+      "name": "Heavy Industry Priority",
+      "icon": "gear",
+      "category": "economic",
+      "description": "Direct investment into metallurgy and machine building at the expense of light industry and housing.",
+      "days": 95,
+      "cost": 55,
+      "requirements": ["The Second Five Year Plan completed"],
+      "prerequisites": ["sov_five_year"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "Stability -2%", "kind": "negative", "bundle": { "stability": -0.02 } }
+      ],
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "sov_collectivisation",
+      "name": "Grain Collection Programme",
+      "icon": "wheat",
+      "category": "economic",
+      "description": "Mechanise the collective farms and set procurement quotas for grain and industrial crops.",
+      "days": 100,
+      "cost": 65,
+      "requirements": ["Heavy Industry Priority completed"],
+      "prerequisites": ["sov_heavy_industry"],
+      "effects": [
+        { "text": "Civilian factory +1", "kind": "positive", "bundle": { "civilianFactories": 1 } },
+        { "text": "Manpower +80,000", "kind": "positive", "bundle": { "manpower": 80000 } },
+        { "text": "Stability -3%", "kind": "negative", "bundle": { "stability": -0.03 } }
+      ],
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "sov_urals",
+      "name": "The Urals Industrial Base",
+      "icon": "mountain",
+      "category": "economic",
+      "description": "Build a second industrial region east of the Volga, beyond the reach of any western air fleet.",
+      "history": "The decision to duplicate industry in the east was the single most important pre-war economic choice of the Soviet state.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["Heavy Industry Priority completed"],
+      "prerequisites": ["sov_heavy_industry"],
+      "effects": [
+        { "text": "Civilian factory +2", "kind": "positive", "bundle": { "civilianFactories": 2 } },
+        { "text": "+8% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.08 } }
+      ],
+      "x": 3,
+      "y": 2
+    },
+    {
+      "id": "sov_transport",
+      "name": "Rail and River Transport",
+      "icon": "truck",
+      "category": "economic",
+      "description": "Rebuild the western rail junctions, widen the canals and standardise rolling stock across the network.",
+      "days": 105,
+      "cost": 70,
+      "requirements": ["Grain Collection Programme completed"],
+      "prerequisites": ["sov_collectivisation"],
+      "effects": [
+        { "text": "Infrastructure +1", "kind": "positive", "bundle": { "infrastructure": 1 } },
+        { "text": "+5% factory output", "kind": "positive", "rates": { "factoryOutput": 0.05 } }
+      ],
+      "x": 3,
+      "y": 3
+    },
+    {
+      "id": "sov_red_army",
+      "name": "The Red Army Reform",
+      "icon": "helmet",
+      "category": "military",
+      "description": "Restore the professional officer corps and the unified command structure abolished in the previous decade.",
+      "days": 70,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Manpower +60,000", "kind": "positive", "bundle": { "manpower": 60000 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 5,
+      "y": 0
+    },
+    {
+      "id": "sov_tank_corps",
+      "name": "Independent Tank Corps",
+      "icon": "tank",
+      "category": "military",
+      "description": "Form tank corps with their own motorised infantry, artillery and repair battalions.",
+      "days": 100,
+      "cost": 70,
+      "requirements": ["The Red Army Reform completed"],
+      "prerequisites": ["sov_red_army"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "+4% production efficiency", "kind": "positive", "rates": { "productionEfficiency": 0.04 } }
+      ],
+      "x": 5,
+      "y": 1
+    },
+    {
+      "id": "sov_deep_battle",
+      "name": "Deep Battle Doctrine",
+      "icon": "book",
+      "category": "military",
+      "description": "Adopt the operational doctrine of simultaneous attacks through the entire depth of the enemy defence.",
+      "history": "Developed in the 1930s, suppressed during the officer purges, and rediscovered under pressure in 1941–42.",
+      "days": 120,
+      "cost": 90,
+      "requirements": ["Independent Tank Corps completed"],
+      "prerequisites": ["sov_tank_corps"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "+8% factory output", "kind": "positive", "rates": { "factoryOutput": 0.08 } }
+      ],
+      "x": 5,
+      "y": 2
+    },
+    {
+      "id": "sov_air_army",
+      "name": "The Air Army",
+      "icon": "fighter",
+      "category": "military",
+      "description": "Consolidate the air fleets into air armies under front command, with modern fighters and ground attack aviation.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["The Red Army Reform completed"],
+      "prerequisites": ["sov_red_army"],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } }
+      ],
+      "x": 6,
+      "y": 2
+    },
+    {
+      "id": "sov_fortress_line",
+      "name": "The Frontier Fortified Zones",
+      "icon": "shield",
+      "category": "military",
+      "description": "Build concrete bunkers and railway artillery sidings along the western frontier.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["Deep Battle Doctrine completed"],
+      "prerequisites": ["sov_deep_battle"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 5,
+      "y": 3
+    },
+    {
+      "id": "sov_stavka",
+      "name": "The High Command Reserve",
+      "icon": "crown",
+      "category": "military",
+      "description": "Create a strategic reserve of combined-arms armies directly under the high command, ready to move between fronts.",
+      "days": 150,
+      "cost": 110,
+      "requirements": ["War support above 50%"],
+      "prerequisites": ["sov_fortress_line", "sov_deep_battle"],
+      "effects": [
+        { "text": "Manpower +120,000", "kind": "positive", "bundle": { "manpower": 120000 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } },
+        { "text": "+6% factory output", "kind": "positive", "rates": { "factoryOutput": 0.06 } }
+      ],
+      "x": 5,
+      "y": 4
+    },
+    {
+      "id": "sov_comintern",
+      "name": "The Comintern",
+      "icon": "star",
+      "category": "diplomatic",
+      "description": "Use the international organisation to coordinate communist parties, volunteers and propaganda abroad.",
+      "days": 70,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } },
+        { "text": "+0.05 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.05 } }
+      ],
+      "x": 8,
+      "y": 0
+    },
+    {
+      "id": "sov_collective_security",
+      "name": "Collective Security",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Seek a grand alliance with the western democracies against the fascist powers, through the League and bilateral pacts.",
+      "history": "The policy foundered on mutual suspicion: London and Paris distrusted Moscow at least as much as they feared Berlin.",
+      "days": 100,
+      "cost": 65,
+      "requirements": ["The Comintern completed"],
+      "prerequisites": ["sov_comintern"],
+      "mutuallyExclusive": ["sov_understanding"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "Political power +45", "kind": "positive", "bundle": { "politicalPower": 45 } }
+      ],
+      "x": 8,
+      "y": 1
+    },
+    {
+      "id": "sov_understanding",
+      "name": "The German Understanding",
+      "icon": "scales",
+      "category": "diplomatic",
+      "description": "Negotiate a non-aggression pact with Berlin, including a secret protocol on the eastern borderlands.",
+      "days": 100,
+      "cost": 65,
+      "requirements": ["The Comintern completed"],
+      "prerequisites": ["sov_comintern"],
+      "mutuallyExclusive": ["sov_collective_security"],
+      "effects": [
+        { "text": "Treasury +200", "kind": "positive", "bundle": { "treasury": 200 } },
+        { "text": "Political power +40", "kind": "positive", "bundle": { "politicalPower": 40 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "consequences": [{ "text": "The western democracies regard Moscow as complicit", "kind": "negative" }],
+      "x": 9,
+      "y": 2
+    },
+    {
+      "id": "sov_borderlands",
+      "name": "The Western Borderlands",
+      "icon": "map",
+      "category": "diplomatic",
+      "description": "Press the Baltic states and eastern Poland for bases and transit rights under the cover of frontier security.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["The German Understanding completed"],
+      "prerequisites": ["sov_understanding"],
+      "effects": [
+        { "text": "Manpower +100,000", "kind": "positive", "bundle": { "manpower": 100000 } },
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } }
+      ],
+      "x": 9,
+      "y": 3
+    },
+    {
+      "id": "sov_pacific_pact",
+      "name": "The Pacific Settlement",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Settle the Manchurian border dispute with Tokyo to avoid a two-front war.",
+      "days": 95,
+      "cost": 70,
+      "requirements": ["Collective Security completed"],
+      "prerequisites": ["sov_collective_security"],
+      "effects": [
+        { "text": "Political power +45", "kind": "positive", "bundle": { "politicalPower": 45 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 9,
+      "y": 4
+    },
+    {
+      "id": "sov_literacy",
+      "name": "The Literacy Campaign",
+      "icon": "book",
+      "category": "social",
+      "description": "Four years of compulsory schooling and a mass literacy drive in the countryside.",
+      "days": 80,
+      "cost": 45,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 10,
+      "y": 0
+    },
+    {
+      "id": "sov_healthcare",
+      "name": "The Health Commissariat",
+      "icon": "medical",
+      "category": "social",
+      "description": "Expand rural clinics, maternity care and industrial health inspection.",
+      "days": 95,
+      "cost": 55,
+      "requirements": ["The Literacy Campaign completed"],
+      "prerequisites": ["sov_literacy"],
+      "effects": [
+        { "text": "Manpower +90,000", "kind": "positive", "bundle": { "manpower": 90000 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 10,
+      "y": 1
+    },
+    {
+      "id": "sov_cadres",
+      "name": "Engineers for the Plan",
+      "icon": "gear",
+      "category": "social",
+      "description": "Technical institutes, evening schools and factory apprenticeships to create an industrial professional class.",
+      "days": 110,
+      "cost": 65,
+      "requirements": ["The Health Commissariat completed"],
+      "prerequisites": ["sov_healthcare"],
+      "effects": [
+        { "text": "+7% research speed", "kind": "positive", "rates": { "researchSpeed": 0.07 } },
+        { "text": "+4% factory output", "kind": "positive", "rates": { "factoryOutput": 0.04 } }
+      ],
+      "x": 10,
+      "y": 2
+    },
+    {
+      "id": "sov_culture",
+      "name": "Socialist Realism",
+      "icon": "star",
+      "category": "social",
+      "description": "Commission film, literature and public architecture celebrating industrial labour and the defence of the state.",
+      "days": 85,
+      "cost": 50,
+      "requirements": ["The Health Commissariat completed"],
+      "prerequisites": ["sov_healthcare"],
+      "effects": [
+        { "text": "Stability +5%", "kind": "positive", "bundle": { "stability": 0.05 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 11,
+      "y": 2
+    },
+    {
+      "id": "sov_urals_bastion",
+      "name": "The Urals Bastion",
+      "icon": "mountain",
+      "category": "unique",
+      "description": "Fortify the industrial east and stockpile raw materials in the event that the western provinces are lost.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["The Urals Industrial Base completed"],
+      "prerequisites": ["sov_urals"],
+      "effects": [
+        { "text": "Infrastructure +1", "kind": "positive", "bundle": { "infrastructure": 1 } },
+        { "text": "+10% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.1 } }
+      ],
+      "x": 12,
+      "y": 0
+    },
+    {
+      "id": "sov_relocation",
+      "name": "Relocate the Western Industry",
+      "icon": "crane",
+      "category": "unique",
+      "description": "Draw up the evacuation schedules that will move entire factories east by rail if the frontier breaks.",
+      "history": "The 1941 evacuation moved more than a thousand plants east in a matter of weeks — an improvised triumph of railway organisation.",
+      "days": 140,
+      "cost": 100,
+      "requirements": ["The Urals Bastion completed"],
+      "prerequisites": ["sov_urals_bastion"],
+      "effects": [
+        { "text": "Civilian factory +2", "kind": "positive", "bundle": { "civilianFactories": 2 } },
+        { "text": "+8% factory output", "kind": "positive", "rates": { "factoryOutput": 0.08 } }
+      ],
+      "x": 12,
+      "y": 1
+    },
+    {
+      "id": "sov_one_country",
+      "name": "Socialism in One Country",
+      "icon": "shield",
+      "category": "unique",
+      "description": "Consolidate the state's internal strength before any foreign adventure: a fortress economy, a loyal army and a closed frontier.",
+      "days": 160,
+      "cost": 120,
+      "requirements": ["Stability above 50%", "War support above 50%"],
+      "prerequisites": ["sov_relocation"],
+      "effects": [
+        { "text": "Stability +6%", "kind": "positive", "bundle": { "stability": 0.06 } },
+        { "text": "Manpower +150,000", "kind": "positive", "bundle": { "manpower": 150000 } },
+        { "text": "War support +5%", "kind": "positive", "bundle": { "warSupport": 0.05 } }
+      ],
+      "x": 12,
+      "y": 2
+    }
+  ]
+}

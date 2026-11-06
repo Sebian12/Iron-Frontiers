@@ -1,0 +1,410 @@
+{
+  "country": "United Kingdom",
+  "focuses": [
+    {
+      "id": "eng_imperial_conference",
+      "name": "The Imperial Conference",
+      "icon": "map",
+      "category": "political",
+      "description": "Bring the dominion prime ministers to London to agree a common position on the European crisis.",
+      "days": 70,
+      "cost": 0,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +35", "kind": "positive", "bundle": { "politicalPower": 35 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "eng_rearmament_debate",
+      "name": "The Rearmament Debate",
+      "icon": "ballot",
+      "category": "political",
+      "description": "Carry a defence estimate through the House against a party still divided between rearmament and retrenchment.",
+      "history": "The debate split both major parties; the government survived it by promising that rearmament would not mean conscription.",
+      "days": 90,
+      "cost": 55,
+      "requirements": ["The Imperial Conference completed"],
+      "prerequisites": ["eng_imperial_conference"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } }
+      ],
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "eng_national_government",
+      "name": "The National Government",
+      "icon": "gov",
+      "category": "political",
+      "description": "Broaden the cabinet to include Labour and Liberal ministers, insulating the war programme from party politics.",
+      "days": 110,
+      "cost": 75,
+      "requirements": ["The Rearmament Debate completed"],
+      "prerequisites": ["eng_rearmament_debate"],
+      "effects": [
+        { "text": "Stability +5%", "kind": "positive", "bundle": { "stability": 0.05 } },
+        { "text": "+0.1 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.1 } }
+      ],
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "eng_war_premiership",
+      "name": "A War Premiership",
+      "icon": "crown",
+      "category": "political",
+      "description": "Reconstitute the government around a small war cabinet with emergency powers over industry and labour.",
+      "days": 140,
+      "cost": 100,
+      "requirements": ["Stability above 55%", "War support above 40%"],
+      "prerequisites": ["eng_national_government"],
+      "effects": [
+        { "text": "War support +6%", "kind": "positive", "bundle": { "warSupport": 0.06 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "+8% factory output", "kind": "positive", "rates": { "factoryOutput": 0.08 } }
+      ],
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "eng_sterling_area",
+      "name": "The Sterling Area",
+      "icon": "coin",
+      "category": "economic",
+      "description": "Formalise the currency bloc and imperial preference so that raw materials can be bought without dollars.",
+      "days": 80,
+      "cost": 35,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Treasury +180", "kind": "positive", "bundle": { "treasury": 180 } },
+        { "text": "+5% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.05 } }
+      ],
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "eng_shadow_factories",
+      "name": "The Shadow Scheme",
+      "icon": "factory",
+      "category": "economic",
+      "description": "Build government-financed plants in the Midlands that can be converted to aircraft production overnight.",
+      "history": "The shadow factories were the reason Fighter Command had reserve airframes at all in 1940.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["The Sterling Area completed"],
+      "prerequisites": ["eng_sterling_area"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "Treasury -140", "kind": "negative", "bundle": { "treasury": -140 } }
+      ],
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "eng_convoy_system",
+      "name": "The Convoy System",
+      "icon": "anchor",
+      "category": "economic",
+      "description": "Organise Atlantic shipping into defended convoys with a central routing room in Liverpool.",
+      "days": 110,
+      "cost": 75,
+      "requirements": ["The Shadow Scheme completed"],
+      "prerequisites": ["eng_shadow_factories"],
+      "effects": [
+        { "text": "Dockyard +2", "kind": "positive", "bundle": { "dockyards": 2 } },
+        { "text": "+0.05 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.05 } }
+      ],
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "eng_austerity",
+      "name": "War Austerity",
+      "icon": "scales",
+      "category": "economic",
+      "description": "Ration food, fuel and clothing, and direct every spare ton of shipping to the war effort.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["The Convoy System completed"],
+      "prerequisites": ["eng_convoy_system"],
+      "effects": [
+        { "text": "+10% factory output", "kind": "positive", "rates": { "factoryOutput": 0.1 } },
+        { "text": "Stability -4%", "kind": "negative", "bundle": { "stability": -0.04 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 2,
+      "y": 3
+    },
+    {
+      "id": "eng_expeditionary",
+      "name": "The Expeditionary Force",
+      "icon": "helmet",
+      "category": "military",
+      "description": "Prepare a field force of two corps for service on the continent, with its own supply and air component.",
+      "days": 70,
+      "cost": 45,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Manpower +40,000", "kind": "positive", "bundle": { "manpower": 40000 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 4,
+      "y": 0
+    },
+    {
+      "id": "eng_raf_expansion",
+      "name": "R.A.F. Expansion Scheme",
+      "icon": "fighter",
+      "category": "military",
+      "description": "Fund the air staff's scheme for a metropolitan air force of bombers and interceptors.",
+      "history": "The expansion schemes were drawn up in numbered stages, each larger than the last, and each overtaken by events.",
+      "days": 95,
+      "cost": 65,
+      "requirements": ["The Expeditionary Force completed"],
+      "prerequisites": ["eng_expeditionary"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } }
+      ],
+      "x": 4,
+      "y": 1
+    },
+    {
+      "id": "eng_radar_chain",
+      "name": "The Radar Chain",
+      "icon": "radar",
+      "category": "military",
+      "description": "Complete a chain of coastal radar stations integrated with fighter control and the observer corps.",
+      "days": 110,
+      "cost": 75,
+      "requirements": ["R.A.F. Expansion Scheme completed"],
+      "prerequisites": ["eng_raf_expansion"],
+      "effects": [
+        { "text": "+8% research speed", "kind": "positive", "rates": { "researchSpeed": 0.08 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 4,
+      "y": 2
+    },
+    {
+      "id": "eng_armoured_division",
+      "name": "The Armoured Division",
+      "icon": "tank",
+      "category": "military",
+      "description": "Convert the cavalry regiments and the tank brigades into a single mechanised armoured division.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["The Expeditionary Force completed"],
+      "prerequisites": ["eng_expeditionary"],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "Manpower +30,000", "kind": "positive", "bundle": { "manpower": 30000 } }
+      ],
+      "x": 5,
+      "y": 2
+    },
+    {
+      "id": "eng_bomber_command",
+      "name": "Bomber Command",
+      "icon": "bomber",
+      "category": "military",
+      "description": "Build a strategic bombing force with four-engine aircraft and a doctrine of industrial attack.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["The Radar Chain completed"],
+      "prerequisites": ["eng_radar_chain"],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 4,
+      "y": 3
+    },
+    {
+      "id": "eng_home_guard",
+      "name": "The Home Guard",
+      "icon": "shield",
+      "category": "military",
+      "description": "Enrol volunteers outside the conscription age bands for local defence and coastal watch.",
+      "days": 100,
+      "cost": 70,
+      "requirements": ["The Armoured Division completed"],
+      "prerequisites": ["eng_armoured_division"],
+      "effects": [
+        { "text": "Manpower +50,000", "kind": "positive", "bundle": { "manpower": 50000 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 5,
+      "y": 3
+    },
+    {
+      "id": "eng_anglo_french",
+      "name": "The Anglo-French Staff Talks",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Resume formal staff conversations with Paris on the dispatch of an expeditionary force and the defence of the Low Countries.",
+      "days": 65,
+      "cost": 35,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 6,
+      "y": 0
+    },
+    {
+      "id": "eng_eastern_guarantee",
+      "name": "The Eastern Guarantee",
+      "icon": "map",
+      "category": "diplomatic",
+      "description": "Guarantee the independence of Poland and Romania, committing the country to a war it cannot yet fight.",
+      "history": "The guarantee was issued in March 1939 without any military mechanism to enforce it. It made the Polish question a British question.",
+      "days": 90,
+      "cost": 60,
+      "requirements": ["The Anglo-French Staff Talks completed"],
+      "prerequisites": ["eng_anglo_french"],
+      "effects": [
+        { "text": "War support +5%", "kind": "positive", "bundle": { "warSupport": 0.05 } },
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } }
+      ],
+      "consequences": [{ "text": "The country is committed to a continental war", "kind": "negative" }],
+      "x": 6,
+      "y": 1
+    },
+    {
+      "id": "eng_lend_lease",
+      "name": "The American Connection",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Negotiate destroyers-for-bases and a supply arrangement with Washington, trading Atlantic bases for shipping and arms.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["The Eastern Guarantee completed"],
+      "prerequisites": ["eng_eastern_guarantee"],
+      "mutuallyExclusive": ["eng_imperial_preference"],
+      "effects": [
+        { "text": "Treasury +300", "kind": "positive", "bundle": { "treasury": 300 } },
+        { "text": "Dockyard +2", "kind": "positive", "bundle": { "dockyards": 2 } },
+        { "text": "+5% factory output", "kind": "positive", "rates": { "factoryOutput": 0.05 } }
+      ],
+      "x": 6,
+      "y": 2
+    },
+    {
+      "id": "eng_imperial_preference",
+      "name": "Imperial Preference",
+      "icon": "coin",
+      "category": "diplomatic",
+      "description": "Rely on the dominions and colonies for men and matériel rather than on Washington's terms.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["The Eastern Guarantee completed"],
+      "prerequisites": ["eng_eastern_guarantee"],
+      "mutuallyExclusive": ["eng_lend_lease"],
+      "effects": [
+        { "text": "Treasury +220", "kind": "positive", "bundle": { "treasury": 220 } },
+        { "text": "Manpower +90,000", "kind": "positive", "bundle": { "manpower": 90000 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 7,
+      "y": 2
+    },
+    {
+      "id": "eng_allied_command",
+      "name": "Allied Command",
+      "icon": "crown",
+      "category": "diplomatic",
+      "description": "Create an integrated allied command structure with a single plan for the defence of the west.",
+      "days": 140,
+      "cost": 100,
+      "requirements": ["War support above 45%"],
+      "prerequisites": ["eng_lend_lease", "eng_imperial_preference"],
+      "effects": [
+        { "text": "Political power +100", "kind": "positive", "bundle": { "politicalPower": 100 } },
+        { "text": "War support +5%", "kind": "positive", "bundle": { "warSupport": 0.05 } },
+        { "text": "+6% factory output", "kind": "positive", "rates": { "factoryOutput": 0.06 } }
+      ],
+      "x": 6,
+      "y": 3
+    },
+    {
+      "id": "eng_bbc",
+      "name": "The National Broadcast",
+      "icon": "radio",
+      "category": "social",
+      "description": "A single public broadcaster with a charter for news and national programming, heard in every household.",
+      "days": 75,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "+0.05 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.05 } }
+      ],
+      "x": 8,
+      "y": 0
+    },
+    {
+      "id": "eng_health_service",
+      "name": "A National Health Service",
+      "icon": "medical",
+      "category": "social",
+      "description": "Draft a plan for free medical care at the point of use, funded from general taxation.",
+      "history": "The wartime coalition commissioned the plan that a later government would implement against considerable professional opposition.",
+      "days": 110,
+      "cost": 65,
+      "requirements": ["The National Broadcast completed"],
+      "prerequisites": ["eng_bbc"],
+      "effects": [
+        { "text": "Manpower +70,000", "kind": "positive", "bundle": { "manpower": 70000 } },
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } }
+      ],
+      "x": 8,
+      "y": 1
+    },
+    {
+      "id": "eng_union_deal",
+      "name": "The Industrial Truce",
+      "icon": "people",
+      "category": "social",
+      "description": "Agree with the trade unions a no-strike pledge in return for consultation on production and prices.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["The National Broadcast completed"],
+      "prerequisites": ["eng_bbc"],
+      "effects": [
+        { "text": "+6% factory output", "kind": "positive", "rates": { "factoryOutput": 0.06 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 9,
+      "y": 1
+    },
+    {
+      "id": "eng_total_mobilisation",
+      "name": "Total Mobilisation",
+      "icon": "hammer",
+      "category": "social",
+      "description": "Direct labour to essential industries, conscript women into war work and extend the working week.",
+      "days": 140,
+      "cost": 95,
+      "requirements": ["Stability above 60%", "War support above 40%"],
+      "prerequisites": ["eng_health_service", "eng_union_deal"],
+      "effects": [
+        { "text": "+10% factory output", "kind": "positive", "rates": { "factoryOutput": 0.1 } },
+        { "text": "Manpower +100,000", "kind": "positive", "bundle": { "manpower": 100000 } },
+        { "text": "Stability -3%", "kind": "negative", "bundle": { "stability": -0.03 } }
+      ],
+      "x": 8,
+      "y": 2
+    }
+  ]
+}

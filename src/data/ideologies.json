@@ -1,0 +1,44 @@
+[
+  {
+    "id": "fascism",
+    "name": "Fascism",
+    "color": "#8f5140",
+    "icon": "torch",
+    "description": "A centralized, militarized state organised around a single national movement and its leader."
+  },
+  {
+    "id": "communism",
+    "name": "Communism",
+    "color": "#a33b3b",
+    "icon": "hammer",
+    "description": "Rule by a vanguard party pursuing collective ownership and rapid industrialisation."
+  },
+  {
+    "id": "democratic",
+    "name": "Democracy",
+    "color": "#4a6d8c",
+    "icon": "ballot",
+    "description": "Government accountable to an elected parliament, with entrenched civil liberties."
+  },
+  {
+    "id": "neutrality",
+    "name": "Neutrality",
+    "color": "#6d7566",
+    "icon": "scales",
+    "description": "A policy of non-alignment, favouring arbitration and armed neutrality over blocs."
+  },
+  {
+    "id": "monarchist",
+    "name": "Monarchism",
+    "color": "#7a6432",
+    "icon": "crown",
+    "description": "Authority vested in a hereditary crown and the institutions that surround it."
+  },
+  {
+    "id": "authoritarian",
+    "name": "Authoritarianism",
+    "color": "#6b5a52",
+    "icon": "shield",
+    "description": "Strong executive rule justified by order, tradition and national discipline."
+  }
+]

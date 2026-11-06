@@ -1,0 +1,311 @@
+{
+  "country": "Generic",
+  "focuses": [
+    {
+      "id": "gen_civil_service",
+      "name": "Reform the Civil Service",
+      "icon": "gov",
+      "category": "political",
+      "description": "A professional, examination-based civil service to replace patronage appointments in the ministries.",
+      "days": 70,
+      "cost": 0,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } },
+        { "text": "+0.05 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.05 } }
+      ],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "gen_constitution",
+      "name": "Constitutional Settlement",
+      "icon": "ballot",
+      "category": "political",
+      "description": "Codify the powers of the executive, the legislature and the courts in a single constitutional act.",
+      "days": 100,
+      "cost": 50,
+      "requirements": ["Reform the Civil Service completed"],
+      "prerequisites": ["gen_civil_service"],
+      "effects": [
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } },
+        { "text": "Political power +40", "kind": "positive", "bundle": { "politicalPower": 40 } }
+      ],
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "gen_national_unity",
+      "name": "National Unity Government",
+      "icon": "handshake",
+      "category": "political",
+      "description": "Invite the opposition into a coalition for the duration of the crisis.",
+      "days": 110,
+      "cost": 65,
+      "requirements": ["Constitutional Settlement completed"],
+      "prerequisites": ["gen_constitution"],
+      "effects": [
+        { "text": "Stability +5%", "kind": "positive", "bundle": { "stability": 0.05 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "gen_industrial_plan",
+      "name": "National Industrial Plan",
+      "icon": "factory",
+      "category": "economic",
+      "description": "Set five-year targets for steel, power and machine tools, with state credits for new plant.",
+      "days": 80,
+      "cost": 30,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Civilian factory +2", "kind": "positive", "bundle": { "civilianFactories": 2 } },
+        { "text": "+4% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.04 } }
+      ],
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "gen_infrastructure",
+      "name": "Roads and Railways",
+      "icon": "crane",
+      "category": "economic",
+      "description": "Connect the interior to the ports with all-weather roads and a modernised rail trunk.",
+      "days": 95,
+      "cost": 50,
+      "requirements": ["National Industrial Plan completed"],
+      "prerequisites": ["gen_industrial_plan"],
+      "effects": [
+        { "text": "Infrastructure +1", "kind": "positive", "bundle": { "infrastructure": 1 } },
+        { "text": "+6% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.06 } }
+      ],
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "gen_exports",
+      "name": "Export Drive",
+      "icon": "coin",
+      "category": "economic",
+      "description": "Use favourable exchange rates and trade missions to win contracts in neutral markets.",
+      "days": 90,
+      "cost": 45,
+      "requirements": ["National Industrial Plan completed"],
+      "prerequisites": ["gen_industrial_plan"],
+      "effects": [
+        { "text": "Treasury +160", "kind": "positive", "bundle": { "treasury": 160 } },
+        { "text": "Political power +15", "kind": "positive", "bundle": { "politicalPower": 15 } }
+      ],
+      "x": 3,
+      "y": 1
+    },
+    {
+      "id": "gen_heavy_industry",
+      "name": "Heavy Industry Programme",
+      "icon": "gear",
+      "category": "economic",
+      "description": "Concentrate investment in metallurgy and armaments plants in the largest industrial centres.",
+      "days": 110,
+      "cost": 65,
+      "requirements": ["Roads and Railways completed"],
+      "prerequisites": ["gen_infrastructure"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "+4% factory output", "kind": "positive", "rates": { "factoryOutput": 0.04 } }
+      ],
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "gen_army_reform",
+      "name": "Army Reform",
+      "icon": "helmet",
+      "category": "military",
+      "description": "A unified general staff, a reserve system and a standard divisional organisation.",
+      "days": 70,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Manpower +45,000", "kind": "positive", "bundle": { "manpower": 45000 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 5,
+      "y": 0
+    },
+    {
+      "id": "gen_doctrine",
+      "name": "Combined Arms Doctrine",
+      "icon": "book",
+      "category": "military",
+      "description": "Train infantry, artillery and armour to fight as one formation with a shared signals net.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["Army Reform completed"],
+      "prerequisites": ["gen_army_reform"],
+      "effects": [
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } },
+        { "text": "+4% research speed", "kind": "positive", "rates": { "researchSpeed": 0.04 } }
+      ],
+      "x": 5,
+      "y": 1
+    },
+    {
+      "id": "gen_air_force",
+      "name": "A Modern Air Force",
+      "icon": "fighter",
+      "category": "military",
+      "description": "Fund interceptors, ground attack aircraft and a reserve of trained pilots.",
+      "days": 95,
+      "cost": 55,
+      "requirements": ["Army Reform completed"],
+      "prerequisites": ["gen_army_reform"],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "+4% research speed", "kind": "positive", "rates": { "researchSpeed": 0.04 } }
+      ],
+      "x": 6,
+      "y": 1
+    },
+    {
+      "id": "gen_navy",
+      "name": "Coastal Defence Fleet",
+      "icon": "warship",
+      "category": "military",
+      "description": "A fleet of torpedo boats, escorts and minelayers sufficient to deny the approaches.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["Army Reform completed"],
+      "prerequisites": ["gen_army_reform"],
+      "effects": [
+        { "text": "Dockyard +2", "kind": "positive", "bundle": { "dockyards": 2 } }
+      ],
+      "x": 7,
+      "y": 1
+    },
+    {
+      "id": "gen_fortifications",
+      "name": "Frontier Fortifications",
+      "icon": "shield",
+      "category": "military",
+      "description": "Concrete, wire and minefields on the most exposed frontier, with railway artillery in support.",
+      "days": 120,
+      "cost": 75,
+      "requirements": ["Combined Arms Doctrine completed"],
+      "prerequisites": ["gen_doctrine"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 5,
+      "y": 2
+    },
+    {
+      "id": "gen_neighbours",
+      "name": "Good Neighbour Policy",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Settle outstanding border and minority questions with the neighbouring states through arbitration.",
+      "days": 70,
+      "cost": 35,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "Political power +25", "kind": "positive", "bundle": { "politicalPower": 25 } }
+      ],
+      "x": 9,
+      "y": 0
+    },
+    {
+      "id": "gen_trade_pact",
+      "name": "Commercial Treaties",
+      "icon": "coin",
+      "category": "diplomatic",
+      "description": "Reciprocal trade agreements that secure the raw materials the industrial plan requires.",
+      "days": 90,
+      "cost": 50,
+      "requirements": ["Good Neighbour Policy completed"],
+      "prerequisites": ["gen_neighbours"],
+      "effects": [
+        { "text": "Treasury +180", "kind": "positive", "bundle": { "treasury": 180 } },
+        { "text": "+5% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.05 } }
+      ],
+      "x": 9,
+      "y": 1
+    },
+    {
+      "id": "gen_defence_pact",
+      "name": "Regional Defence Pact",
+      "icon": "shield",
+      "category": "diplomatic",
+      "description": "A mutual assistance treaty with the smaller states of the region, backed by staff talks.",
+      "days": 110,
+      "cost": 70,
+      "requirements": ["Commercial Treaties completed"],
+      "prerequisites": ["gen_trade_pact"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "Political power +35", "kind": "positive", "bundle": { "politicalPower": 35 } }
+      ],
+      "x": 9,
+      "y": 2
+    },
+    {
+      "id": "gen_education",
+      "name": "Public Education",
+      "icon": "book",
+      "category": "social",
+      "description": "Compulsory primary schooling and technical colleges in the industrial towns.",
+      "days": 80,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 11,
+      "y": 0
+    },
+    {
+      "id": "gen_public_health",
+      "name": "Public Health",
+      "icon": "medical",
+      "category": "social",
+      "description": "Rural clinics, sanitation and a national campaign against epidemic disease.",
+      "days": 95,
+      "cost": 50,
+      "requirements": ["Public Education completed"],
+      "prerequisites": ["gen_education"],
+      "effects": [
+        { "text": "Manpower +50,000", "kind": "positive", "bundle": { "manpower": 50000 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 11,
+      "y": 1
+    },
+    {
+      "id": "gen_national_pride",
+      "name": "A National Narrative",
+      "icon": "star",
+      "category": "unique",
+      "description": "A state-supported history of the nation, taught in schools and broadcast on the new radio service.",
+      "days": 100,
+      "cost": 55,
+      "requirements": ["Public Education completed"],
+      "prerequisites": ["gen_education"],
+      "effects": [
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } },
+        { "text": "+0.05 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.05 } }
+      ],
+      "x": 11,
+      "y": 2
+    }
+  ]
+}

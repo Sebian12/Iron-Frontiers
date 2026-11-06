@@ -1,0 +1,666 @@
+{
+  "country": "German Reich",
+  "focuses": [
+    {
+      "id": "ger_rhineland",
+      "name": "The Rhineland Mandate",
+      "icon": "flag",
+      "category": "political",
+      "description": "Reoccupy the demilitarised western zone and present Europe with a fait accompli. The army has orders to withdraw if the French mobilise.",
+      "history": "The demilitarised zone was created by the 1919 settlement. Reoccupying it was the first open breach of that order, and the moment the western powers discovered that their intelligence estimates were wrong.",
+      "days": 70,
+      "cost": 0,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "War support +5%", "kind": "positive", "bundle": { "warSupport": 0.05 } },
+        { "text": "Political power +30", "kind": "positive", "bundle": { "politicalPower": 30 } }
+      ],
+      "consequences": [{ "text": "France and Britain lose faith in the settlement", "kind": "negative" }],
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "ger_southern_union",
+      "name": "The Southern Union",
+      "icon": "handshake",
+      "category": "political",
+      "description": "Bring the Austrian republic into the Reich through a customs union, a plebiscite and a great deal of pressure.",
+      "history": "A customs union was attempted in 1931 and blocked by the great powers. The second attempt would not be blocked.",
+      "days": 90,
+      "cost": 50,
+      "requirements": ["War support above 40%", "No war with a major power"],
+      "prerequisites": ["ger_rhineland"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "Manpower +60,000", "kind": "positive", "bundle": { "manpower": 60000 } },
+        { "text": "Political power +40", "kind": "positive", "bundle": { "politicalPower": 40 } }
+      ],
+      "consequences": [{ "text": "Italy cools towards Berlin", "kind": "negative" }],
+      "x": 0,
+      "y": 1
+    },
+    {
+      "id": "ger_borderland",
+      "name": "The Borderland Question",
+      "icon": "map",
+      "category": "political",
+      "description": "Demand the German-speaking districts of the Czech borderlands after a fabricated crisis in Prague.",
+      "history": "The conference that settled this demand in 1938 excluded the state whose territory was being divided. It bought eleven months and destroyed the last eastern alliance system.",
+      "days": 105,
+      "cost": 75,
+      "requirements": ["Southern Union completed", "War support above 45%"],
+      "prerequisites": ["ger_southern_union"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "Political power +40", "kind": "positive", "bundle": { "politicalPower": 40 } },
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } }
+      ],
+      "consequences": [{ "text": "The western powers begin rearmament in earnest", "kind": "negative" }],
+      "x": 0,
+      "y": 2
+    },
+    {
+      "id": "ger_danzig",
+      "name": "The Danzig Question",
+      "icon": "flag",
+      "category": "political",
+      "description": "Settle the status of the free city and the corridor. Warsaw has refused every proposal; the general staff is asked for a plan instead.",
+      "history": "The corridor was the most visible territorial clause of the 1919 settlement. Its revision was the immediate trigger of the 1939 campaign.",
+      "days": 120,
+      "cost": 100,
+      "requirements": ["The Borderland Question completed", "War support above 50%"],
+      "prerequisites": ["ger_borderland"],
+      "effects": [
+        { "text": "War support +6%", "kind": "positive", "bundle": { "warSupport": 0.06 } },
+        { "text": "Political power +50", "kind": "positive", "bundle": { "politicalPower": 50 } }
+      ],
+      "consequences": [{ "text": "Poland receives Anglo-French guarantees", "kind": "negative" }],
+      "x": 0,
+      "y": 3
+    },
+    {
+      "id": "ger_iron_dawn",
+      "name": "Operation Iron Dawn",
+      "icon": "swords",
+      "category": "military",
+      "description": "Issue the standing order for the eastern campaign: a single theatre plan, one mobilisation wave, no separate negotiations.",
+      "history": "The plan assumed the campaign would be decided in weeks and that the supply services would catch up afterwards. Both assumptions were wrong.",
+      "days": 150,
+      "cost": 150,
+      "requirements": ["The Danzig Question completed", "War support above 55%", "Army at 80% strength"],
+      "prerequisites": ["ger_danzig"],
+      "effects": [
+        { "text": "War support +8%", "kind": "positive", "bundle": { "warSupport": 0.08 } },
+        { "text": "Manpower +90,000", "kind": "positive", "bundle": { "manpower": 90000 } },
+        { "text": "Stability -4%", "kind": "negative", "bundle": { "stability": -0.04 } }
+      ],
+      "consequences": [{ "text": "Two-front war becomes likely", "kind": "negative" }],
+      "x": 0,
+      "y": 4
+    },
+    {
+      "id": "ger_pact_steel",
+      "name": "The Pact of Steel",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Convert the informal understanding with Rome into a formal military alliance with automatic consultation.",
+      "history": "The alliance pledged mutual support, but its signatories never agreed on what that meant in practice.",
+      "days": 60,
+      "cost": 40,
+      "requirements": ["Political power 40"],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Political power +25", "kind": "positive", "bundle": { "politicalPower": 25 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 1,
+      "y": 0
+    },
+    {
+      "id": "ger_anti_comintern",
+      "name": "Anti-Comintern Front",
+      "icon": "shield",
+      "category": "diplomatic",
+      "description": "Build a bloc of states opposed to Moscow, offering arms and instructors in exchange for alignment.",
+      "days": 90,
+      "cost": 60,
+      "requirements": ["Pact of Steel completed"],
+      "prerequisites": ["ger_pact_steel"],
+      "mutuallyExclusive": ["ger_ribbentrop"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "Political power +35", "kind": "positive", "bundle": { "politicalPower": 35 } },
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } }
+      ],
+      "x": 1,
+      "y": 1
+    },
+    {
+      "id": "ger_ribbentrop",
+      "name": "The Moscow Protocol",
+      "icon": "scales",
+      "category": "diplomatic",
+      "description": "Send a delegation to Moscow to buy neutrality in the east with a secret partition protocol.",
+      "history": "The pact shocked every foreign ministry in Europe. It removed the two-front problem for one campaign and made the eastern settlement possible.",
+      "days": 90,
+      "cost": 60,
+      "requirements": ["Pact of Steel completed"],
+      "prerequisites": ["ger_pact_steel"],
+      "mutuallyExclusive": ["ger_anti_comintern"],
+      "effects": [
+        { "text": "Political power +45", "kind": "positive", "bundle": { "politicalPower": 45 } },
+        { "text": "Treasury +220", "kind": "positive", "bundle": { "treasury": 220 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "consequences": [{ "text": "The anti-Soviet bloc is abandoned", "kind": "negative" }],
+      "x": 1,
+      "y": 2
+    },
+    {
+      "id": "ger_tokyo_pact",
+      "name": "The Tokyo Understanding",
+      "icon": "handshake",
+      "category": "diplomatic",
+      "description": "Align with the Japanese empire and agree on spheres of influence in Asia and Europe.",
+      "days": 100,
+      "cost": 70,
+      "requirements": ["Anti-Comintern Front completed"],
+      "prerequisites": ["ger_anti_comintern"],
+      "effects": [
+        { "text": "Political power +35", "kind": "positive", "bundle": { "politicalPower": 35 } },
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } }
+      ],
+      "x": 1,
+      "y": 3
+    },
+    {
+      "id": "ger_balkan_mission",
+      "name": "Balkan Economic Mission",
+      "icon": "coin",
+      "category": "diplomatic",
+      "description": "Trade machine tools for oil, grain and chrome, pulling the Danubian states into the German economic orbit.",
+      "days": 90,
+      "cost": 55,
+      "requirements": ["The Moscow Protocol completed"],
+      "prerequisites": ["ger_ribbentrop"],
+      "effects": [
+        { "text": "Treasury +180", "kind": "positive", "bundle": { "treasury": 180 } },
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "Political power +25", "kind": "positive", "bundle": { "politicalPower": 25 } }
+      ],
+      "x": 1,
+      "y": 4
+    },
+    {
+      "id": "ger_world_stage",
+      "name": "The World Stage",
+      "icon": "star",
+      "category": "diplomatic",
+      "description": "A global network of alignments, from the Danube to the Yellow Sea. The foreign ministry can now choose its partners rather than accept them.",
+      "days": 160,
+      "cost": 120,
+      "requirements": ["War support above 50%"],
+      "prerequisites": ["ger_tokyo_pact", "ger_balkan_mission"],
+      "effects": [
+        { "text": "Political power +120", "kind": "positive", "bundle": { "politicalPower": 120 } },
+        { "text": "War support +6%", "kind": "positive", "bundle": { "warSupport": 0.06 } },
+        { "text": "+10% factory output", "kind": "positive", "rates": { "factoryOutput": 0.1 } }
+      ],
+      "x": 1,
+      "y": 5
+    },
+    {
+      "id": "ger_four_year",
+      "name": "The Four Year Plan",
+      "icon": "factory",
+      "category": "economic",
+      "description": "Put the whole economy on a four-year footing with production targets set by the central planning office.",
+      "history": "The plan tied industrial output to rearmament targets and made the state the largest customer in the economy.",
+      "days": 70,
+      "cost": 30,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Civilian factory +2", "kind": "positive", "bundle": { "civilianFactories": 2 } },
+        { "text": "Treasury -100", "kind": "negative", "bundle": { "treasury": -100 } }
+      ],
+      "x": 2,
+      "y": 0
+    },
+    {
+      "id": "ger_autarky",
+      "name": "Autarky Programme",
+      "icon": "rubber",
+      "category": "economic",
+      "description": "Reduce dependence on imported raw materials through substitution, stockpiling and hard currency rationing.",
+      "days": 90,
+      "cost": 50,
+      "requirements": ["Four Year Plan completed"],
+      "prerequisites": ["ger_four_year"],
+      "effects": [
+        { "text": "+12% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.12 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 2,
+      "y": 1
+    },
+    {
+      "id": "ger_synthetic",
+      "name": "Synthetic Fuel Plants",
+      "icon": "oil",
+      "category": "economic",
+      "description": "Coal liquefaction at Leuna and Pölitz, scaled to fuel an army that has no domestic oil.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["Autarky Programme completed"],
+      "prerequisites": ["ger_autarky"],
+      "effects": [
+        { "text": "+6% factory output", "kind": "positive", "rates": { "factoryOutput": 0.06 } },
+        { "text": "Treasury -150", "kind": "negative", "bundle": { "treasury": -150 } }
+      ],
+      "x": 2,
+      "y": 2
+    },
+    {
+      "id": "ger_steel_works",
+      "name": "Ruhr Steel Works",
+      "icon": "gear",
+      "category": "economic",
+      "description": "Expand the great steel combines of the Ruhr and Silesia to keep the arms plants fed.",
+      "days": 95,
+      "cost": 55,
+      "requirements": ["Four Year Plan completed"],
+      "prerequisites": ["ger_four_year"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } }
+      ],
+      "x": 3,
+      "y": 2
+    },
+    {
+      "id": "ger_krupp",
+      "name": "The Krupp Contracts",
+      "icon": "factory",
+      "category": "economic",
+      "description": "Long-term cost-plus contracts with the heavy industry combines, with guaranteed priority for armour plate.",
+      "days": 110,
+      "cost": 80,
+      "requirements": ["Ruhr Steel Works completed"],
+      "prerequisites": ["ger_steel_works"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "+4% factory output", "kind": "positive", "rates": { "factoryOutput": 0.04 } }
+      ],
+      "x": 3,
+      "y": 3
+    },
+    {
+      "id": "ger_volkswagen",
+      "name": "The People's Car",
+      "icon": "truck",
+      "category": "economic",
+      "description": "A state-subsidised automobile plant that will put a motor car in every household — and a spare capacity in every factory.",
+      "days": 110,
+      "cost": 70,
+      "requirements": ["Synthetic Fuel Plants completed"],
+      "prerequisites": ["ger_synthetic"],
+      "effects": [
+        { "text": "Civilian factory +1", "kind": "positive", "bundle": { "civilianFactories": 1 } },
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 4,
+      "y": 3
+    },
+    {
+      "id": "ger_total_mobilisation",
+      "name": "Total Mobilisation",
+      "icon": "hammer",
+      "category": "economic",
+      "description": "Place every workshop, foundry and repair shop under the armaments ministry and run production around the clock.",
+      "days": 150,
+      "cost": 120,
+      "requirements": ["Stability above 50%", "War support above 45%"],
+      "prerequisites": ["ger_krupp", "ger_volkswagen"],
+      "effects": [
+        { "text": "Military factory +3", "kind": "positive", "bundle": { "militaryFactories": 3 } },
+        { "text": "+8% factory output", "kind": "positive", "rates": { "factoryOutput": 0.08 } },
+        { "text": "Stability -3%", "kind": "negative", "bundle": { "stability": -0.03 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 3,
+      "y": 4
+    },
+    {
+      "id": "ger_rearmament",
+      "name": "Open Rearmament",
+      "icon": "rifle",
+      "category": "military",
+      "description": "Announce the restoration of conscription and a peacetime army of thirty-six divisions.",
+      "history": "The announcement in March 1935 was a direct repudiation of the disarmament clauses and the beginning of the open arms race.",
+      "days": 60,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 5,
+      "y": 0
+    },
+    {
+      "id": "ger_panzer",
+      "name": "Panzer Doctrine",
+      "icon": "tank",
+      "category": "military",
+      "description": "Concentrate tanks in independent divisions with their own supply, signals and motorised infantry.",
+      "days": 90,
+      "cost": 60,
+      "requirements": ["Open Rearmament completed"],
+      "prerequisites": ["ger_rearmament"],
+      "effects": [
+        { "text": "+6% production efficiency", "kind": "positive", "rates": { "productionEfficiency": 0.06 } },
+        { "text": "Manpower +40,000", "kind": "positive", "bundle": { "manpower": 40000 } }
+      ],
+      "x": 5,
+      "y": 1
+    },
+    {
+      "id": "ger_blitzkrieg",
+      "name": "Lightning War",
+      "icon": "swords",
+      "category": "military",
+      "description": "Adopt the doctrine of the short campaign: break the front, paralyse the headquarters, and never let the enemy re-form.",
+      "history": "The doctrine depended on signals, air superiority and logistics as much as on tanks. When those failed, the campaigns stopped.",
+      "days": 110,
+      "cost": 90,
+      "requirements": ["Panzer Doctrine completed", "War support above 50%"],
+      "prerequisites": ["ger_panzer"],
+      "effects": [
+        { "text": "War support +4%", "kind": "positive", "bundle": { "warSupport": 0.04 } },
+        { "text": "+8% factory output", "kind": "positive", "rates": { "factoryOutput": 0.08 } }
+      ],
+      "x": 5,
+      "y": 2
+    },
+    {
+      "id": "ger_luftwaffe",
+      "name": "Strategic Air Arm",
+      "icon": "fighter",
+      "category": "military",
+      "description": "Fund a independent air arm with fighters, dive bombers and a modern ground organisation.",
+      "days": 95,
+      "cost": 65,
+      "requirements": ["Open Rearmament completed"],
+      "prerequisites": ["ger_rearmament"],
+      "effects": [
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } },
+        { "text": "+5% research speed", "kind": "positive", "rates": { "researchSpeed": 0.05 } }
+      ],
+      "x": 6,
+      "y": 2
+    },
+    {
+      "id": "ger_plan_z",
+      "name": "Plan Z",
+      "icon": "warship",
+      "category": "military",
+      "description": "A ten-year naval programme of battleships, carriers and cruisers to challenge the north Atlantic.",
+      "days": 100,
+      "cost": 70,
+      "requirements": ["Open Rearmament completed"],
+      "prerequisites": ["ger_rearmament"],
+      "mutuallyExclusive": ["ger_commerce"],
+      "effects": [
+        { "text": "Dockyard +3", "kind": "positive", "bundle": { "dockyards": 3 } },
+        { "text": "Treasury -120", "kind": "negative", "bundle": { "treasury": -120 } }
+      ],
+      "x": 7,
+      "y": 2
+    },
+    {
+      "id": "ger_commerce",
+      "name": "Commerce Warfare",
+      "icon": "submarine",
+      "category": "military",
+      "description": "Skip the battle fleet. Build submarines, long-range aircraft and a network of raiders to starve an island economy.",
+      "days": 100,
+      "cost": 70,
+      "requirements": ["Open Rearmament completed"],
+      "prerequisites": ["ger_rearmament"],
+      "mutuallyExclusive": ["ger_plan_z"],
+      "effects": [
+        { "text": "Dockyard +1", "kind": "positive", "bundle": { "dockyards": 1 } },
+        { "text": "+5% factory output", "kind": "positive", "rates": { "factoryOutput": 0.05 } }
+      ],
+      "x": 7,
+      "y": 3
+    },
+    {
+      "id": "ger_atlantic_wall",
+      "name": "The Atlantic Wall",
+      "icon": "shield",
+      "category": "military",
+      "description": "Fortify the western coast from Norway to the Pyrenees with concrete, minefields and coastal batteries.",
+      "days": 120,
+      "cost": 85,
+      "requirements": ["Strategic Air Arm completed"],
+      "prerequisites": ["ger_luftwaffe"],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 6,
+      "y": 3
+    },
+    {
+      "id": "ger_stormtroops",
+      "name": "Assault Detachments",
+      "icon": "helmet",
+      "category": "military",
+      "description": "Reintroduce specialist assault battalions trained to crack fortified positions at close range.",
+      "days": 130,
+      "cost": 100,
+      "requirements": ["Lightning War completed"],
+      "prerequisites": ["ger_blitzkrieg"],
+      "effects": [
+        { "text": "Manpower +80,000", "kind": "positive", "bundle": { "manpower": 80000 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ],
+      "x": 5,
+      "y": 4
+    },
+    {
+      "id": "ger_total_war",
+      "name": "Total War Economy",
+      "icon": "hammer",
+      "category": "military",
+      "description": "Every man, factory and railway is placed on a war footing. There is no civilian sector left to negotiate with.",
+      "days": 160,
+      "cost": 140,
+      "requirements": ["War support above 60%"],
+      "prerequisites": ["ger_stormtroops", "ger_total_mobilisation"],
+      "effects": [
+        { "text": "War support +6%", "kind": "positive", "bundle": { "warSupport": 0.06 } },
+        { "text": "Manpower +120,000", "kind": "positive", "bundle": { "manpower": 120000 } },
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "Stability -4%", "kind": "negative", "bundle": { "stability": -0.04 } }
+      ],
+      "x": 5,
+      "y": 5
+    },
+    {
+      "id": "ger_youth",
+      "name": "The Youth Organisation",
+      "icon": "people",
+      "category": "social",
+      "description": "A single state youth movement with camps, sports grounds and a pre-military curriculum.",
+      "days": 60,
+      "cost": 30,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Stability +3%", "kind": "positive", "bundle": { "stability": 0.03 } }
+      ],
+      "x": 8,
+      "y": 0
+    },
+    {
+      "id": "ger_propaganda",
+      "name": "Ministry of Public Enlightenment",
+      "icon": "radio",
+      "category": "social",
+      "description": "Centralise press, film and radio under a single ministry with a monopoly on the national narrative.",
+      "days": 80,
+      "cost": 45,
+      "requirements": ["The Youth Organisation completed"],
+      "prerequisites": ["ger_youth"],
+      "effects": [
+        { "text": "+0.1 political power per day", "kind": "positive", "rates": { "ppPerDay": 0.1 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 8,
+      "y": 1
+    },
+    {
+      "id": "ger_welfare",
+      "name": "Winter Relief Programme",
+      "icon": "coin",
+      "category": "social",
+      "description": "A national charitable drive that doubles as a loyalty test for every household and business.",
+      "days": 95,
+      "cost": 55,
+      "requirements": ["Ministry of Public Enlightenment completed"],
+      "prerequisites": ["ger_propaganda"],
+      "effects": [
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } },
+        { "text": "Treasury -100", "kind": "negative", "bundle": { "treasury": -100 } }
+      ],
+      "x": 8,
+      "y": 2
+    },
+    {
+      "id": "ger_health",
+      "name": "Public Health Service",
+      "icon": "medical",
+      "category": "social",
+      "description": "Rural clinics, maternity wards and a national fitness standard for the next generation of conscripts.",
+      "days": 85,
+      "cost": 50,
+      "requirements": ["The Youth Organisation completed"],
+      "prerequisites": ["ger_youth"],
+      "effects": [
+        { "text": "Manpower +45,000", "kind": "positive", "bundle": { "manpower": 45000 } },
+        { "text": "Stability +2%", "kind": "positive", "bundle": { "stability": 0.02 } }
+      ],
+      "x": 9,
+      "y": 2
+    },
+    {
+      "id": "ger_education",
+      "name": "Technical Academies",
+      "icon": "book",
+      "category": "social",
+      "description": "Fund engineering schools in the industrial districts and tie their curricula to the armaments programme.",
+      "days": 110,
+      "cost": 65,
+      "requirements": ["Public Health Service completed"],
+      "prerequisites": ["ger_health"],
+      "effects": [
+        { "text": "+6% research speed", "kind": "positive", "rates": { "researchSpeed": 0.06 } }
+      ],
+      "x": 9,
+      "y": 3
+    },
+    {
+      "id": "ger_volksgemeinschaft",
+      "name": "The National Community",
+      "icon": "star",
+      "category": "social",
+      "description": "A national ideology of unity across class lines, enforced through party organisations in every workplace.",
+      "days": 115,
+      "cost": 70,
+      "requirements": ["Winter Relief Programme completed"],
+      "prerequisites": ["ger_welfare"],
+      "effects": [
+        { "text": "Stability +5%", "kind": "positive", "bundle": { "stability": 0.05 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ],
+      "x": 10,
+      "y": 3
+    },
+    {
+      "id": "ger_autobahn",
+      "name": "The Motorway Network",
+      "icon": "crane",
+      "category": "unique",
+      "description": "A national motorway grid linking the industrial west to the agricultural east, built for civilian traffic and military movement alike.",
+      "history": "The motorway programme was the most visible public works project of the decade and the model for later wartime logistics planning.",
+      "days": 80,
+      "cost": 40,
+      "requirements": [],
+      "prerequisites": [],
+      "effects": [
+        { "text": "Infrastructure +1", "kind": "positive", "bundle": { "infrastructure": 1 } },
+        { "text": "Civilian factory +1", "kind": "positive", "bundle": { "civilianFactories": 1 } },
+        { "text": "Treasury -80", "kind": "negative", "bundle": { "treasury": -80 } }
+      ],
+      "x": 11,
+      "y": 0
+    },
+    {
+      "id": "ger_grossraum",
+      "name": "The Continental Economy",
+      "icon": "map",
+      "category": "unique",
+      "description": "Integrate the economies of the smaller European states into a single market with the Reich at its centre.",
+      "days": 100,
+      "cost": 60,
+      "requirements": ["The Motorway Network completed"],
+      "prerequisites": ["ger_autobahn"],
+      "effects": [
+        { "text": "Political power +50", "kind": "positive", "bundle": { "politicalPower": 50 } },
+        { "text": "+8% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.08 } }
+      ],
+      "x": 11,
+      "y": 1
+    },
+    {
+      "id": "ger_thousand_year",
+      "name": "The Enduring Reich",
+      "icon": "crown",
+      "category": "unique",
+      "description": "A constitutional settlement that places the state above party and parliament, with the chancellery as its permanent centre.",
+      "days": 140,
+      "cost": 90,
+      "requirements": ["Stability above 55%"],
+      "prerequisites": ["ger_grossraum"],
+      "effects": [
+        { "text": "Stability +6%", "kind": "positive", "bundle": { "stability": 0.06 } },
+        { "text": "Political power +80", "kind": "positive", "bundle": { "politicalPower": 80 } }
+      ],
+      "x": 11,
+      "y": 2
+    },
+    {
+      "id": "ger_iron_front",
+      "name": "The Iron Front",
+      "icon": "shield",
+      "category": "unique",
+      "description": "A permanent mobilisation state with a standing army of eighty divisions and a fortified frontier in every direction.",
+      "days": 170,
+      "cost": 130,
+      "requirements": ["War support above 55%"],
+      "prerequisites": ["ger_thousand_year"],
+      "effects": [
+        { "text": "War support +8%", "kind": "positive", "bundle": { "warSupport": 0.08 } },
+        { "text": "Manpower +100,000", "kind": "positive", "bundle": { "manpower": 100000 } },
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } }
+      ],
+      "x": 11,
+      "y": 3
+    }
+  ]
+}

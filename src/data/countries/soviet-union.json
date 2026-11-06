@@ -1,0 +1,235 @@
+{
+  "tag": "SOV",
+  "name": "Soviet Union",
+  "mapNames": ["Soviet Union"],
+  "accent": "#8a4636",
+  "ideology": "communism",
+  "faction": "Comintern",
+  "leader": {
+    "name": "Mikhail Volkov",
+    "title": "General Secretary",
+    "portrait": "volkov",
+    "biography": "General Secretary of the All-Union Communist Party since 1924. Volkov has built a command economy around heavy industry and a party apparatus that reaches into every enterprise, and he treats the coming European crisis as an opportunity to secure the western frontier.",
+    "traits": [
+      { "name": "Command Economy", "description": "+10% construction speed, -5% consumer goods.", "icon": "factory" },
+      { "name": "Party Apparatus", "description": "+0.1 political power per day.", "icon": "gov" },
+      { "name": "Suspicious of the West", "description": "Diplomatic relations with capitalist powers drift down.", "icon": "eye" }
+    ]
+  },
+  "coalition": "All-Union Communist Party",
+  "legitimacy": 0.83,
+  "parties": [
+    { "name": "All-Union Communist Party", "ideology": "communism", "popularity": 0.76, "inGovernment": true, "description": "The only legal party. Its apparatus controls the state, the army and the press." },
+    { "name": "Left Socialist Revolutionaries", "ideology": "communism", "popularity": 0.09, "inGovernment": false, "description": "A remnant of the revolutionary coalition, tolerated as a rural faction." },
+    { "name": "Constitutional Democrats", "ideology": "democratic", "popularity": 0.05, "inGovernment": false, "description": "Exiled and underground; influence limited to émigré circles." },
+    { "name": "Monarchist Union", "ideology": "monarchist", "popularity": 0.10, "inGovernment": false, "description": "Scattered legitimist networks with no open organisation inside the country." }
+  ],
+  "stats": {
+    "politicalPower": 110,
+    "stability": 0.46,
+    "warSupport": 0.55,
+    "manpower": 3100000,
+    "treasury": 2400,
+    "income": 122,
+    "expenses": 96
+  },
+  "industry": {
+    "civilianFactories": 46,
+    "militaryFactories": 18,
+    "dockyards": 4,
+    "infrastructure": 5,
+    "resources": { "steel": 220, "oil": 180, "rubber": 18, "aluminium": 42, "tungsten": 26, "chromium": 30 },
+    "trade": [
+      { "country": "Germany", "resource": "oil", "amount": 40, "direction": "export" },
+      { "country": "United States", "resource": "rubber", "amount": 14, "direction": "import" },
+      { "country": "United Kingdom", "resource": "steel", "amount": 20, "direction": "import" }
+    ]
+  },
+  "army": {
+    "commanders": [
+      { "name": "Marshal Boris Yegorov", "rank": "Marshal of the Soviet Union", "trait": "Organiser", "attack": 3, "defense": 5, "planning": 5, "logistics": 4, "portrait": "yegorov" },
+      { "name": "General Pavel Raskolnikov", "rank": "General of the Army", "trait": "Panzer Leader", "attack": 5, "defense": 3, "planning": 3, "logistics": 3, "portrait": "raskolnikov" },
+      { "name": "General Yelena Sorokina", "rank": "General-Lieutenant", "trait": "Winter Specialist", "attack": 4, "defense": 4, "planning": 4, "logistics": 2, "portrait": "sorokina" }
+    ],
+    "divisions": [
+      { "name": "1st Rifle Division", "template": "Rifle Division", "type": "infantry", "experience": 0.18, "strength": 0.9, "location": "Moscow" },
+      { "name": "2nd Rifle Division", "template": "Rifle Division", "type": "infantry", "experience": 0.16, "strength": 0.88, "location": "Minsk" },
+      { "name": "3rd Rifle Division", "template": "Rifle Division", "type": "infantry", "experience": 0.15, "strength": 0.86, "location": "Kiev" },
+      { "name": "4th Rifle Division", "template": "Rifle Division", "type": "infantry", "experience": 0.14, "strength": 0.83, "location": "Leningrad" },
+      { "name": "5th Rifle Division", "template": "Rifle Division", "type": "infantry", "experience": 0.13, "strength": 0.81, "location": "Kharkov" },
+      { "name": "1st Tank Brigade", "template": "Tank Brigade", "type": "armor", "experience": 0.24, "strength": 0.89, "location": "Smolensk" },
+      { "name": "2nd Tank Brigade", "template": "Tank Brigade", "type": "armor", "experience": 0.21, "strength": 0.87, "location": "Kharkov" },
+      { "name": "1st Cavalry Division", "template": "Cavalry Division", "type": "cavalry", "experience": 0.12, "strength": 0.8, "location": "Rostov" }
+    ]
+  },
+  "advisors": [
+    {
+      "id": "sov_adv_orlov",
+      "name": "Andrei Orlov",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "communism",
+      "portrait": "orlov",
+      "description": "Head of the party control commission. His approval is required for any senior industrial appointment.",
+      "bonus": "+0.12 political power per day",
+      "cost": 100,
+      "rates": { "ppPerDay": 0.12 }
+    },
+    {
+      "id": "sov_adv_lebedeva",
+      "name": "Natalia Lebedeva",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "communism",
+      "portrait": "lebedeva",
+      "description": "A trade union organiser and advocate of expanding consumer goods, popular with the factory committees.",
+      "bonus": "+3% stability, +2% construction speed",
+      "cost": 95,
+      "bundle": { "stability": 0.03 },
+      "rates": { "constructionSpeed": 0.02 }
+    },
+    {
+      "id": "sov_adv_yegorov",
+      "name": "Marshal Boris Yegorov",
+      "position": "Chief of the General Staff",
+      "slot": "staff",
+      "ideology": "communism",
+      "portrait": "yegorov",
+      "description": "A staff officer of the old school who insists on thorough mobilisation plans before any frontier adventure.",
+      "bonus": "+10% construction speed, +3% research speed",
+      "cost": 120,
+      "rates": { "constructionSpeed": 0.1, "researchSpeed": 0.03 }
+    },
+    {
+      "id": "sov_adv_gusev",
+      "name": "Viktor Gusev",
+      "position": "Head of Intelligence",
+      "slot": "intelligence",
+      "ideology": "communism",
+      "portrait": "gusev",
+      "description": "Runs the foreign intelligence directorate; his network in Tokyo has been reporting on the Far East since 1932.",
+      "bonus": "+1 operative slot, +8% decryption",
+      "cost": 105,
+      "rates": { "researchSpeed": 0.02 }
+    },
+    {
+      "id": "sov_adv_samoilov",
+      "name": "Prof. Ivan Samoilov",
+      "position": "Military Theorist",
+      "slot": "theorist",
+      "ideology": "communism",
+      "portrait": "samoilov",
+      "description": "The leading advocate of successive-echelon operations and a critic of the cavalry establishment.",
+      "bonus": "+7% research speed",
+      "cost": 85,
+      "rates": { "researchSpeed": 0.07 }
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "sov_mod_plan",
+      "name": "Five Year Plan",
+      "icon": "factory",
+      "description": "Production targets are set by the planning commissariat, down to the individual blast furnace.",
+      "effect": "+8% factory output",
+      "kind": "positive",
+      "rates": { "factoryOutput": 0.08 }
+    },
+    {
+      "id": "sov_mod_security",
+      "name": "Frontier Security Zone",
+      "icon": "shield",
+      "description": "Fortified districts along the western approaches, with the population organised for civil defence.",
+      "effect": "+2% stability",
+      "kind": "positive",
+      "rates": { "stabilityDrift": 0.002 }
+    },
+    {
+      "id": "sov_mod_transport",
+      "name": "Transport Bottleneck",
+      "icon": "truck",
+      "description": "The rail net cannot carry both the industrial plan and the army's supply requirements. One of them will be cut.",
+      "effect": "-10% supply throughput",
+      "kind": "negative"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "sov_dec_rail",
+      "name": "Second Trans-Siberian Track",
+      "icon": "crane",
+      "category": "economic",
+      "description": "Double-track the eastern trunk line so that industry behind the Urals can be supplied without priority conflicts.",
+      "cost": 90,
+      "cooldown": 300,
+      "requirements": ["Treasury above 250"],
+      "effects": [
+        { "text": "Infrastructure +1", "kind": "positive", "bundle": { "infrastructure": 1 } },
+        { "text": "+10% construction speed", "kind": "positive", "rates": { "constructionSpeed": 0.1 } },
+        { "text": "Treasury -160", "kind": "negative", "bundle": { "treasury": -160 } }
+      ]
+    },
+    {
+      "id": "sov_dec_cadres",
+      "name": "Technical Cadre Drive",
+      "icon": "book",
+      "category": "political",
+      "description": "Promote engineers and skilled machinists into supervisory positions, bypassing party seniority where necessary.",
+      "cost": 65,
+      "cooldown": 200,
+      "requirements": ["Stability above 40%"],
+      "effects": [
+        { "text": "+6% research speed", "kind": "positive", "rates": { "researchSpeed": 0.06 } },
+        { "text": "Stability -2%", "kind": "negative", "bundle": { "stability": -0.02 } }
+      ]
+    },
+    {
+      "id": "sov_dec_army_reform",
+      "name": "Reorganise the Mechanised Corps",
+      "icon": "tank",
+      "category": "military",
+      "description": "Break up the oversized tank brigades into corps built around independent tank and motor rifle formations.",
+      "cost": 80,
+      "cooldown": 240,
+      "requirements": ["War support above 45%"],
+      "effects": [
+        { "text": "Manpower +70,000", "kind": "positive", "bundle": { "manpower": 70000 } },
+        { "text": "Military factory +1", "kind": "positive", "bundle": { "militaryFactories": 1 } }
+      ]
+    },
+    {
+      "id": "sov_dec_frontier",
+      "name": "Frontier Guarantees",
+      "icon": "handshake",
+      "category": "foreign",
+      "description": "Offer security guarantees to the western border states in exchange for transit rights.",
+      "cost": 55,
+      "cooldown": 220,
+      "requirements": ["Political power 55"],
+      "effects": [
+        { "text": "Political power +20", "kind": "positive", "bundle": { "politicalPower": 20 } },
+        { "text": "War support +3%", "kind": "positive", "bundle": { "warSupport": 0.03 } }
+      ]
+    },
+    {
+      "id": "sov_dec_consumer",
+      "name": "Consumer Goods Allocation",
+      "icon": "people",
+      "category": "political",
+      "description": "Divert a share of light industry to clothing, furniture and household goods to ease pressure in the cities.",
+      "cost": 70,
+      "cooldown": 260,
+      "requirements": ["Stability above 35%"],
+      "effects": [
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } },
+        { "text": "+4% factory output (morale)", "kind": "neutral", "rates": { "factoryOutput": 0.04 } }
+      ]
+    }
+  ],
+  "researchSlots": 3,
+  "focusTree": "soviet-union",
+  "agency": {
+    "name": "Foreign Intelligence Directorate",
+    "description": "A network of resident stations from Tokyo to New York, with a large and well-funded cipher section."
+  }
+}

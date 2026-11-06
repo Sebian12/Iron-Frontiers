@@ -1,0 +1,234 @@
+{
+  "tag": "ENG",
+  "name": "United Kingdom",
+  "mapNames": ["United Kingdom"],
+  "accent": "#4d5f74",
+  "ideology": "democratic",
+  "faction": "Allies",
+  "leader": {
+    "name": "Arthur Hale",
+    "title": "Prime Minister",
+    "portrait": "hale",
+    "biography": "A barrister and former chancellor who inherited a government committed to collective security and a defence budget it cannot afford to expand quickly. Hale believes the country's strength lies in the empire, the fleet and the American connection.",
+    "traits": [
+      { "name": "Parliamentary Mandate", "description": "Stability is high, but war support grows slowly.", "icon": "ballot" },
+      { "name": "Naval Tradition", "description": "+10% dockyard output.", "icon": "anchor" },
+      { "name": "Imperial Commitments", "description": "Manpower must also garrison overseas stations.", "icon": "map" }
+    ]
+  },
+  "coalition": "National Government",
+  "legitimacy": 0.81,
+  "parties": [
+    { "name": "Conservative Union", "ideology": "democratic", "popularity": 0.48, "inGovernment": true, "description": "The largest party in the national government, divided between rearmers and supporters of appeasement." },
+    { "name": "Labour Party", "ideology": "democratic", "popularity": 0.34, "inGovernment": false, "description": "Opposes rearmament in principle but supports collective security and public housing." },
+    { "name": "Liberal Party", "ideology": "democratic", "popularity": 0.12, "inGovernment": false, "description": "A small parliamentary group with influence in the press and the civil service." },
+    { "name": "Communist Party", "ideology": "communism", "popularity": 0.06, "inGovernment": false, "description": "A narrow industrial base, closely watched by the security service." }
+  ],
+  "stats": {
+    "politicalPower": 80,
+    "stability": 0.66,
+    "warSupport": 0.28,
+    "manpower": 620000,
+    "treasury": 3200,
+    "income": 142,
+    "expenses": 116
+  },
+  "industry": {
+    "civilianFactories": 44,
+    "militaryFactories": 14,
+    "dockyards": 22,
+    "infrastructure": 8,
+    "resources": { "steel": 160, "oil": 8, "rubber": 90, "aluminium": 16, "tungsten": 2, "chromium": 1 },
+    "trade": [
+      { "country": "United States", "resource": "oil", "amount": 50, "direction": "import" },
+      { "country": "Sweden", "resource": "steel", "amount": 30, "direction": "import" },
+      { "country": "Malaya", "resource": "rubber", "amount": 60, "direction": "import" }
+    ]
+  },
+  "army": {
+    "commanders": [
+      { "name": "General Edmund Carey", "rank": "General", "trait": "Infantry Leader", "attack": 3, "defense": 5, "planning": 4, "logistics": 5, "portrait": "carey" },
+      { "name": "General Nigel Whitmore", "rank": "Lieutenant-General", "trait": "Panzer Leader", "attack": 4, "defense": 3, "planning": 4, "logistics": 3, "portrait": "whitmore" },
+      { "name": "Air Marshal Hugh Bellamy", "rank": "Air Marshal", "trait": "Air Superiority", "attack": 4, "defense": 3, "planning": 5, "logistics": 4, "portrait": "bellamy" }
+    ],
+    "divisions": [
+      { "name": "1st Infantry Division", "template": "Infantry Division", "type": "infantry", "experience": 0.22, "strength": 0.95, "location": "Aldershot" },
+      { "name": "2nd Infantry Division", "template": "Infantry Division", "type": "infantry", "experience": 0.2, "strength": 0.93, "location": "Salisbury" },
+      { "name": "3rd Infantry Division", "template": "Infantry Division", "type": "infantry", "experience": 0.19, "strength": 0.92, "location": "Colchester" },
+      { "name": "1st Armoured Division", "template": "Armoured Division", "type": "armor", "experience": 0.18, "strength": 0.86, "location": "Bovington" },
+      { "name": "1st Indian Division", "template": "Colonial Division", "type": "infantry", "experience": 0.24, "strength": 0.9, "location": "Delhi" },
+      { "name": "1st Cavalry Brigade", "template": "Cavalry Brigade", "type": "cavalry", "experience": 0.14, "strength": 0.82, "location": "Cairo" }
+    ]
+  },
+  "advisors": [
+    {
+      "id": "eng_adv_harrow",
+      "name": "Sir James Harrow",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "democratic",
+      "portrait": "harrow",
+      "description": "Permanent Under-Secretary at the Foreign Office and the architect of the government's collective security line.",
+      "bonus": "+0.12 political power per day",
+      "cost": 90,
+      "rates": { "ppPerDay": 0.12 }
+    },
+    {
+      "id": "eng_adv_marsh",
+      "name": "Ellen Marsh",
+      "position": "Political Advisor",
+      "slot": "political",
+      "ideology": "democratic",
+      "portrait": "marsh",
+      "description": "A former housing minister with strong links to the unions; she can quiet labour unrest at a price.",
+      "bonus": "+3% stability, +2% construction speed",
+      "cost": 95,
+      "bundle": { "stability": 0.03 },
+      "rates": { "constructionSpeed": 0.02 }
+    },
+    {
+      "id": "eng_adv_carey",
+      "name": "General Edmund Carey",
+      "position": "Chief of the Imperial General Staff",
+      "slot": "staff",
+      "ideology": "democratic",
+      "portrait": "carey",
+      "description": "A cautious staff chief who insists that any continental commitment be matched by shipping and supply.",
+      "bonus": "+10% construction speed, +3% factory output",
+      "cost": 110,
+      "rates": { "constructionSpeed": 0.1, "factoryOutput": 0.03 }
+    },
+    {
+      "id": "eng_adv_ashdown",
+      "name": "Cecil Ashdown",
+      "position": "Head of Intelligence",
+      "slot": "intelligence",
+      "ideology": "neutrality",
+      "portrait": "ashdown",
+      "description": "Runs the foreign section from a suite in Whitehall; his intercept service is the finest in Europe.",
+      "bonus": "+1 operative slot, +12% decryption",
+      "cost": 100,
+      "rates": { "researchSpeed": 0.02 }
+    },
+    {
+      "id": "eng_adv_tyler",
+      "name": "Dr. Martin Tyler",
+      "position": "Military Theorist",
+      "slot": "theorist",
+      "ideology": "democratic",
+      "portrait": "tyler",
+      "description": "An air power theorist arguing that the next war will be decided by radar, fighters and a trained reserve of pilots.",
+      "bonus": "+6% research speed",
+      "cost": 85,
+      "rates": { "researchSpeed": 0.06 }
+    }
+  ],
+  "modifiers": [
+    {
+      "id": "eng_mod_empire",
+      "name": "Imperial Preference",
+      "icon": "map",
+      "description": "Trade inside the sterling area supplies rubber, tin and food at preferential rates.",
+      "effect": "+6% factory output",
+      "kind": "positive",
+      "rates": { "factoryOutput": 0.06 }
+    },
+    {
+      "id": "eng_mod_tenyear",
+      "name": "Ten Year Rule",
+      "icon": "scales",
+      "description": "The treasury still plans on the assumption that no major war will occur within a decade.",
+      "effect": "-4% construction speed",
+      "kind": "negative",
+      "rates": { "constructionSpeed": -0.04 }
+    },
+    {
+      "id": "eng_mod_raf",
+      "name": "Air Defence of Great Britain",
+      "icon": "radar",
+      "description": "A chain of radar stations and observer corps covers the eastern approaches.",
+      "effect": "+0.02 stability per day",
+      "kind": "positive",
+      "rates": { "stabilityDrift": 0.02 }
+    }
+  ],
+  "decisions": [
+    {
+      "id": "eng_dec_shadow",
+      "name": "Shadow Factory Scheme",
+      "icon": "factory",
+      "category": "economic",
+      "description": "License civilian plants to build aero engines and airframes in peacetime, under government guarantee.",
+      "cost": 85,
+      "cooldown": 260,
+      "requirements": ["Treasury above 300"],
+      "effects": [
+        { "text": "Military factory +2", "kind": "positive", "bundle": { "militaryFactories": 2 } },
+        { "text": "Treasury -180", "kind": "negative", "bundle": { "treasury": -180 } }
+      ]
+    },
+    {
+      "id": "eng_dec_radar",
+      "name": "Chain Home Expansion",
+      "icon": "radar",
+      "category": "military",
+      "description": "Extend radar coverage along the east coast and integrate it with the fighter control rooms.",
+      "cost": 70,
+      "cooldown": 220,
+      "requirements": ["War support above 25%"],
+      "effects": [
+        { "text": "+8% research speed", "kind": "positive", "rates": { "researchSpeed": 0.08 } },
+        { "text": "Treasury -120", "kind": "negative", "bundle": { "treasury": -120 } }
+      ]
+    },
+    {
+      "id": "eng_dec_home_guard",
+      "name": "Local Defence Volunteers",
+      "icon": "helmet",
+      "category": "military",
+      "description": "Raise a part-time home defence force from men outside the conscription age bands.",
+      "cost": 55,
+      "cooldown": 180,
+      "requirements": ["Stability above 55%"],
+      "effects": [
+        { "text": "Manpower +60,000", "kind": "positive", "bundle": { "manpower": 60000 } },
+        { "text": "War support +2%", "kind": "positive", "bundle": { "warSupport": 0.02 } }
+      ]
+    },
+    {
+      "id": "eng_dec_commonwealth",
+      "name": "Commonwealth Consultation",
+      "icon": "handshake",
+      "category": "foreign",
+      "description": "Convene the dominion prime ministers to coordinate war plans and imperial supply.",
+      "cost": 45,
+      "cooldown": 240,
+      "requirements": ["Political power 45"],
+      "effects": [
+        { "text": "Political power +25", "kind": "positive", "bundle": { "politicalPower": 25 } },
+        { "text": "Treasury +160", "kind": "positive", "bundle": { "treasury": 160 } }
+      ]
+    },
+    {
+      "id": "eng_dec_housing",
+      "name": "Public Housing Act",
+      "icon": "people",
+      "category": "political",
+      "description": "Fund slum clearance and new council housing to honour the government's domestic promises.",
+      "cost": 75,
+      "cooldown": 270,
+      "requirements": ["Treasury above 250"],
+      "effects": [
+        { "text": "Stability +4%", "kind": "positive", "bundle": { "stability": 0.04 } },
+        { "text": "Civilian factory +1", "kind": "positive", "bundle": { "civilianFactories": 1 } },
+        { "text": "Treasury -150", "kind": "negative", "bundle": { "treasury": -150 } }
+      ]
+    }
+  ],
+  "researchSlots": 3,
+  "focusTree": "united-kingdom",
+  "agency": {
+    "name": "Secret Intelligence Service",
+    "description": "The foreign intelligence service, with stations across Europe and a growing signals section at Bletchley."
+  }
+}

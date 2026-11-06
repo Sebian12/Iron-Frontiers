@@ -2,11 +2,16 @@ import { Application } from 'pixi.js';
 import { loadWorld } from './data/loadWorld';
 import { MapRenderer } from './render/mapRenderer';
 import { createStartMenu, showLoadingScreen } from './ui/menu';
+import { loadContent } from './data/loadContent';
+import { GameState } from './sim/gameState';
+import { createGameShell, type GameShell } from './ui/shell';
+import { showTipAt, hideTipNow } from './ui/tooltip';
+import type { MapBridge } from './ui/screen';
+import './ui/theme.css';
 
 async function start() {
   document.body.style.margin = '0';
   document.body.style.overflow = 'hidden';
-  // Sea color, so whatever part of the window the map does not cover looks like open ocean.
   document.body.style.background = '#183454';
   const finishLoading = showLoadingScreen();
 
@@ -14,15 +19,21 @@ async function start() {
 
   const app = new Application();
   await app.init({ resizeTo: window, background: '#183454', preference: 'webgl', antialias: false });
-  document.body.appendChild(app.canvas);
+  const canvas = app.canvas as HTMLCanvasElement;
+  canvas.className = 'if-canvas';
+  document.body.appendChild(canvas);
+  const vignette = document.createElement('div');
+  vignette.className = 'if-map-vignette';
+  document.body.appendChild(vignette);
 
   const map = new MapRenderer(world);
   app.stage.addChild(map.view);
 
-  // Camera: pan and zoom by moving and scaling the map container. It is clamped to the map bounds,
-  // so the map can never be dragged off screen: when it is larger than the window it always covers
-  // the window, when it is smaller it stays centered.
+  // Camera: the map is moved and scaled as one container and clamped to its bounds.
   const fitScale = () => Math.min(window.innerWidth / world.width, window.innerHeight / world.height);
+  const HUD_LEFT = 66;
+  const HUD_TOP = 50;
+  const HUD_BOTTOM = 68;
 
   function clampCamera() {
     const vw = window.innerWidth;
@@ -39,28 +50,7 @@ async function start() {
   clampCamera();
   window.addEventListener('resize', clampCamera);
 
-  // Info panel for the selected province; it only appears once the player picked a country.
-  const info = document.createElement('div');
-  info.style.cssText =
-    'position:fixed;left:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;pointer-events:none;display:none';
-  info.textContent = 'Click a province. Mouse wheel = zoom, drag = pan.';
-  document.body.appendChild(info);
-
-  // Small badge with the country the player controls.
-  const badge = document.createElement('div');
-  badge.style.cssText =
-    'position:fixed;right:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;display:none;align-items:center;gap:8px;pointer-events:none';
-  const badgeSwatch = document.createElement('span');
-  badgeSwatch.style.cssText = 'width:12px;height:12px;border:1px solid #0008;box-shadow:0 0 0 1px #ffffff55';
-  const badgeName = document.createElement('span');
-  badge.append(badgeSwatch, badgeName);
-  document.body.appendChild(badge);
-
-  /**
-   * Frames the player's country: centred on its outline in the free part of the window, zoomed so it
-   * fills a good part of it. `insetLeft` is the width of the menu panel covering the left side.
-   */
-  function focusCountry(countryId: number, insetLeft = 0) {
+  function countryBounds(countryId: number) {
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
@@ -72,66 +62,86 @@ async function start() {
       if (province.y < minY) minY = province.y;
       if (province.y > maxY) maxY = province.y;
     }
-    if (!Number.isFinite(minX)) return;
+    return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
+  }
 
-    // Leave some room around the country, but never zoom out past the fitted view or in past 2 px/texel.
+  function focusCountry(countryId: number, insetLeft = HUD_LEFT) {
+    const bounds = countryBounds(countryId);
+    if (!bounds) return;
     const viewWidth = Math.max(window.innerWidth - insetLeft, 1);
+    const viewHeight = Math.max(window.innerHeight - HUD_TOP - HUD_BOTTOM, 1);
     const centerX = insetLeft + viewWidth / 2;
-    const padding = 1.8;
+    const centerY = HUD_TOP + viewHeight / 2;
     const scale = Math.min(
       Math.max(
         Math.min(
-          viewWidth / Math.max(maxX - minX, 1) / padding,
-          window.innerHeight / Math.max(maxY - minY, 1) / padding,
+          viewWidth / Math.max(bounds.maxX - bounds.minX, 1) / 1.9,
+          viewHeight / Math.max(bounds.maxY - bounds.minY, 1) / 1.9,
         ),
         fitScale(),
       ),
-      2,
+      Math.min(3.2, fitScale() * 26),
     );
     map.view.scale.set(scale);
     map.view.position.set(
-      centerX - ((minX + maxX) / 2) * scale,
-      window.innerHeight / 2 - ((minY + maxY) / 2) * scale,
+      centerX - ((bounds.minX + bounds.maxX) / 2) * scale,
+      centerY - ((bounds.minY + bounds.maxY) / 2) * scale,
     );
     map.setZoom(scale);
     clampCamera();
   }
 
+  function focusProvince(provinceId: number) {
+    const province = world.provinces[provinceId];
+    if (!province) return;
+    const scale = Math.max(map.view.scale.x, fitScale() * 6);
+    const centerX = HUD_LEFT + (window.innerWidth - HUD_LEFT) / 2;
+    const centerY = HUD_TOP + (window.innerHeight - HUD_TOP - HUD_BOTTOM) / 2;
+    map.view.scale.set(scale);
+    map.view.position.set(centerX - province.x * scale, centerY - province.y * scale);
+    map.setZoom(scale);
+    clampCamera();
+  }
+
+  let shell: GameShell | null = null;
+  let hoveredProvince = -1;
+
+  const bridge: MapBridge = {
+    focusCountry: (id) => focusCountry(id),
+    focusProvince: (id) => focusProvince(id),
+    highlightCountry: (id) => map.setHighlightCountry(id === null ? -1 : id),
+    selectProvince: (id) => map.setSelected(id),
+  };
+
   const menu = createStartMenu(world, {
-    // Picking a country zooms the map to it; the panel on the left stays out of the frame.
     onSelect: (countryId) => {
       const panel = document.querySelector('.if-pick');
-      focusCountry(countryId, panel instanceof HTMLElement ? panel.getBoundingClientRect().width : 0);
+      focusCountry(countryId, panel instanceof HTMLElement ? 0 : HUD_LEFT);
     },
     onStart: (countryId) => {
-      const country = world.countries[countryId];
-      badgeName.textContent = `Playing as: ${country.name}`;
-      badgeSwatch.style.background = `rgb(${country.color.join(', ')})`;
-      badge.style.display = 'flex';
-      info.style.display = '';
+      const content = loadContent(world, countryId);
+      const state = new GameState(world, content, countryId);
+      shell = createGameShell(state, content, bridge);
+      document.body.appendChild(shell.element);
+      map.setSelected(0);
       focusCountry(countryId);
     },
   });
 
-  // Draw the map once before the loading cover goes away, so the menu sits on a finished picture.
   app.render();
   finishLoading();
 
-  const canvas = app.canvas as HTMLCanvasElement;
-
-  // Zoom with the mouse wheel around the cursor.
   canvas.addEventListener(
     'wheel',
-    (e) => {
-      e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      // Zooming out stops at the fitted view, so the map always covers the window and no empty
-      // margin can appear around it.
+    (event) => {
+      event.preventDefault();
+      if (!shell) return;
+      const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
       const newScale = Math.min(Math.max(map.view.scale.x * factor, fitScale()), fitScale() * 40);
       const k = newScale / map.view.scale.x;
       map.view.position.set(
-        e.clientX - (e.clientX - map.view.x) * k,
-        e.clientY - (e.clientY - map.view.y) * k,
+        event.clientX - (event.clientX - map.view.x) * k,
+        event.clientY - (event.clientY - map.view.y) * k,
       );
       map.view.scale.set(newScale);
       map.setZoom(newScale);
@@ -140,50 +150,68 @@ async function start() {
     { passive: false },
   );
 
-  // Drag to pan; a short click selects a province.
   let dragging = false;
   let moved = 0;
   let lastX = 0;
   let lastY = 0;
-  canvas.addEventListener('pointerdown', (e) => {
+
+  canvas.addEventListener('pointerdown', (event) => {
     dragging = true;
     moved = 0;
-    lastX = e.clientX;
-    lastY = e.clientY;
+    lastX = event.clientX;
+    lastY = event.clientY;
   });
-  window.addEventListener('pointermove', (e) => {
+
+  window.addEventListener('pointermove', (event) => {
+    if (event.target === canvas && shell) {
+      const local = map.view.toLocal({ x: event.clientX, y: event.clientY });
+      const id = map.provinceAt(local.x, local.y);
+      if (id !== hoveredProvince) {
+        hoveredProvince = id;
+        map.setHover(id);
+      }
+      if (id > 0 && !dragging && shell.currentScreen() === 'overview') {
+        const province = world.provinces[id];
+        const owner = world.countries[province.owner];
+        const provinceState = world.states[province.state];
+        if (owner && owner.id !== 0) {
+          showTipAt(
+            `<span class="if-tip__title">${provinceState?.name ?? province.name}</span>Province #${province.id} · ${owner.name}<span class="if-tip__note">Click to select · drag to pan · wheel to zoom</span>`,
+            event.clientX,
+            event.clientY,
+          );
+        } else {
+          hideTipNow();
+        }
+      } else {
+        hideTipNow();
+      }
+    } else if (hoveredProvince !== -1 && !dragging) {
+      hoveredProvince = -1;
+      map.setHover(-1);
+      hideTipNow();
+    }
     if (!dragging) return;
-    const dx = e.clientX - lastX;
-    const dy = e.clientY - lastY;
+    const dx = event.clientX - lastX;
+    const dy = event.clientY - lastY;
     moved += Math.abs(dx) + Math.abs(dy);
     map.view.x += dx;
     map.view.y += dy;
     clampCamera();
-    lastX = e.clientX;
-    lastY = e.clientY;
+    lastX = event.clientX;
+    lastY = event.clientY;
   });
-  window.addEventListener('pointerup', (e) => {
+
+  window.addEventListener('pointerup', (event) => {
     if (!dragging) return;
     dragging = false;
-    if (moved > 4) return;
-    const local = map.view.toLocal({ x: e.clientX, y: e.clientY });
+    if (moved > 5) return;
+    const local = map.view.toLocal({ x: event.clientX, y: event.clientY });
     const id = map.provinceAt(local.x, local.y);
-    // While the menu is open a click picks a country instead of a province.
     if (menu.handleMapClick(id > 0 ? world.provinces[id].owner : 0)) return;
+    if (!shell) return;
     map.setSelected(id);
-    if (id <= 0) {
-      info.textContent = id === 0 ? 'Sea' : 'Outside the map';
-      return;
-    }
-    const p = world.provinces[id];
-    const owner = world.countries[p.owner];
-    const overlord = owner.overlord !== null ? ` (subject of ${world.countries[owner.overlord].name})` : '';
-    const state = world.states[p.state];
-    if (owner.id === 0) {
-      info.textContent = `${state.name} (sea) | sea province #${id} | neighbours: ${p.neighbors.length}`;
-      return;
-    }
-    info.textContent = `${state.name} | province #${id} | owner: ${owner.name}${overlord} | neighbours: ${p.neighbors.length}`;
+    shell.refresh();
   });
 }
 
