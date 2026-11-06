@@ -10,8 +10,12 @@ import type {
   FocusDef,
   GameEventDef,
   ModifierDef,
+  PoliticalEffect,
+  PoliticalTransitionDef,
   RateBundle,
 } from './content';
+import type { PoliticalContext, PoliticalHistoryEntry, PoliticalHistoryType, PoliticalState } from './politics';
+import { PoliticalManager, clamp100, createPoliticalState, systemById, transitionById } from './politics';
 import type { World } from './world';
 import type { ConstructionState, EquipmentDef, ProductionLineState } from '../data/production';
 import { BUILDINGS, EQUIPMENT, buildingById, equipmentById } from '../data/production';
@@ -88,7 +92,7 @@ export interface ActionResult {
   message: string;
 }
 
-export type FocusState = 'completed' | 'active' | 'available' | 'locked' | 'exclusive';
+export type FocusState = 'completed' | 'bypassed' | 'active' | 'available' | 'locked' | 'exclusive' | 'invalidated';
 export type TechState = 'completed' | 'active' | 'available' | 'locked';
 
 const RESOURCE_KEYS: (keyof CountryResources)[] = ['steel', 'oil', 'rubber', 'aluminium', 'tungsten', 'chromium'];
@@ -138,7 +142,12 @@ export class GameState {
 
   focus: FocusProgress | null = null;
   completedFocuses = new Set<string>();
+  bypassedFocuses = new Set<string>();
   extraRates: RateBundle = {};
+
+  political!: PoliticalState;
+  politics!: PoliticalManager;
+  politicalHistory: PoliticalHistoryEntry[] = [];
 
   research: (ResearchProgress | null)[];
   completedTechs = new Set<string>();
@@ -205,9 +214,15 @@ export class GameState {
       templateId: division.type,
     }));
 
+    this.political = createPoliticalState(content.def, content.politics);
+    this.politics = new PoliticalManager(this.political, content.politics);
+
     this.seedStockpile();
     this.seedProduction();
     this.seedOperatives();
+
+    const system = this.politicalSystem;
+    this.recordHistory('system', system?.name ?? 'Government formed', `${content.def.name} begins the campaign under the ${system?.name ?? 'existing constitution'}. ${content.def.leader.name} holds the office of ${content.def.leader.title}.`, system?.icon ?? 'gov');
 
     this.notify('info', 'Campaign begins', `${content.def.name} · 1 January 1936. The national focus tree is ready; choose a focus to set the country's course.`, 'focus');
     this.notify('info', 'Economy', 'Civilian factories are waiting for construction orders and military factories can be assigned to production lines.', 'production');
@@ -235,6 +250,7 @@ export class GameState {
     for (const modifier of this.nationalModifiers) sumRates(total, modifier.rates);
     sumRates(total, this.extraRates);
     sumRates(total, this.advisorRates);
+    sumRates(total, this.politics.rates());
     return total;
   }
 
@@ -316,13 +332,30 @@ export class GameState {
     if (bundle.militaryFactories) this.militaryFactories = Math.max(0, this.militaryFactories + bundle.militaryFactories * sign);
     if (bundle.dockyards) this.dockyards = Math.max(0, this.dockyards + bundle.dockyards * sign);
     if (bundle.infrastructure) this.infrastructure = clamp(this.infrastructure + bundle.infrastructure * sign, 0, 10);
+    if (bundle.researchSlots) {
+      const slots = Math.max(1, this.research.length + bundle.researchSlots * sign);
+      while (this.research.length < slots) this.research.push(null);
+      if (slots < this.research.length) this.research.length = slots;
+    }
   }
 
   applyEffects(effects: Effect[]): void {
     for (const effect of effects) {
       this.applyBundle(effect.bundle);
       sumRates(this.extraRates, effect.rates);
+      if (effect.political) this.applyPoliticalEffect(effect.political);
     }
+  }
+
+  private applyPoliticalEffect(effect: PoliticalEffect): void {
+    if (effect.politicalPower) this.politicalPower = Math.max(0, this.politicalPower + effect.politicalPower);
+    if (effect.stability) this.stability = clamp(this.stability + effect.stability);
+    if (effect.warSupport) this.warSupport = clamp(this.warSupport + effect.warSupport);
+    this.politics.applyEffect(effect);
+    if (effect.historyTitle && !effect.transitionId) {
+      this.recordHistory('reform', effect.historyTitle, effect.historyText ?? effect.historyTitle, effect.historyIcon ?? 'scroll');
+    }
+    if (effect.transitionId) this.executeTransition(effect.transitionId, 'focus');
   }
 
   notify(kind: NotificationKind, title: string, text: string, screen?: string): void {
@@ -373,13 +406,31 @@ export class GameState {
 
   focusState(id: string): FocusState {
     if (this.completedFocuses.has(id)) return 'completed';
+    if (this.bypassedFocuses.has(id)) return 'bypassed';
     if (this.focus?.id === id) return 'active';
     const focus = this.focusById(id);
     if (!focus) return 'locked';
-    const blockedBy = (focus.mutuallyExclusive ?? []).find((other) => this.completedFocuses.has(other));
+    if (focus.requiresSystem?.length && !focus.requiresSystem.includes(this.political.systemId)) return 'invalidated';
+    if (focus.requiresIdeology?.length && !focus.requiresIdeology.includes(this.political.ideology)) return 'invalidated';
+    if (focus.requiresFlag && !this.politics.hasFlag(focus.requiresFlag)) return 'locked';
+    const blockedBy = (focus.mutuallyExclusive ?? []).find((other) => this.completedFocuses.has(other) || this.bypassedFocuses.has(other));
     if (blockedBy) return 'exclusive';
-    const ready = (focus.prerequisites ?? []).every((prereq) => this.completedFocuses.has(prereq));
-    return ready ? 'available' : 'locked';
+    const prerequisitesReady = (focus.prerequisites ?? []).every((prereq) => this.completedFocuses.has(prereq) || this.bypassedFocuses.has(prereq));
+    const anyReady = !focus.prerequisitesAny?.length || focus.prerequisitesAny.some((entry) => this.completedFocuses.has(entry));
+    return prerequisitesReady && anyReady ? 'available' : 'locked';
+  }
+
+  focusInvalidReason(id: string): string | null {
+    const focus = this.focusById(id);
+    if (!focus) return null;
+    if (focus.requiresSystem?.length && !focus.requiresSystem.includes(this.political.systemId)) {
+      return `This path belongs to the ${focus.requiresSystem.map((id) => systemById(this.content.politics, id)?.name ?? id).join(' or ')}.`;
+    }
+    if (focus.requiresIdeology?.length && !focus.requiresIdeology.includes(this.political.ideology)) {
+      return 'The current state ideology has closed this path.';
+    }
+    if (focus.requiresFlag && !this.politics.hasFlag(focus.requiresFlag)) return 'A political precondition has not been met.';
+    return null;
   }
 
   focusBlockedBy(id: string): string | null {
@@ -398,10 +449,12 @@ export class GameState {
   canStartFocus(id: string): ActionResult {
     if (this.focus) return { ok: false, message: 'Another national focus is already in progress.' };
     if (this.focusState(id) === 'completed') return { ok: false, message: 'This focus is already completed.' };
+    if (this.focusState(id) === 'bypassed') return { ok: false, message: 'This focus was bypassed.' };
+    if (this.focusState(id) === 'invalidated') return { ok: false, message: this.focusInvalidReason(id) ?? 'The current constitution has invalidated this focus.' };
     if (this.focusState(id) === 'exclusive') {
       return { ok: false, message: `Blocked by ${this.focusBlockedBy(id) ?? 'a mutually exclusive focus'}.` };
     }
-    if (this.focusState(id) === 'locked') return { ok: false, message: 'Its prerequisites are not completed.' };
+    if (this.focusState(id) === 'locked') return { ok: false, message: this.focusInvalidReason(id) ?? 'Its prerequisites are not completed.' };
     const focus = this.focusById(id);
     if (!focus) return { ok: false, message: 'Unknown focus.' };
     if (this.politicalPower < (focus.cost ?? 0)) {
@@ -429,6 +482,17 @@ export class GameState {
     this.notify('warn', 'Focus abandoned', `${focus?.name ?? 'The focus'} was cancelled. Its political power cost is not refunded.`, 'focus');
   }
 
+  bypassFocus(id: string): ActionResult {
+    const focus = this.focusById(id);
+    if (!focus) return { ok: false, message: 'Unknown focus.' };
+    if (!focus.bypassable) return { ok: false, message: 'This focus cannot be bypassed.' };
+    if (this.focusState(id) !== 'available') return { ok: false, message: 'This focus is not available for bypass.' };
+    this.bypassedFocuses.add(id);
+    this.completedFocuses.add(id);
+    this.notify('info', 'Focus bypassed', `${focus.name} was satisfied by existing conditions and bypassed without its rewards.`, 'focus');
+    return { ok: true, message: 'Focus bypassed.' };
+  }
+
   private completeFocus(): void {
     if (!this.focus) return;
     const focus = this.focusById(this.focus.id);
@@ -436,11 +500,26 @@ export class GameState {
       this.focus = null;
       return;
     }
+    if (this.completedFocuses.has(focus.id) || this.bypassedFocuses.has(focus.id)) {
+      this.focus = null;
+      return;
+    }
     this.completedFocuses.add(focus.id);
     this.focus = null;
     this.applyEffects(focus.effects);
+    if (focus.branch && focus.branch !== 'settlement') {
+      this.recordHistory('focus', focus.name, focus.description, focus.icon);
+    }
+    if (focus.events?.length) {
+      const event = focus.events.map((id) => this.content.politics.events.find((entry) => entry.id === id)).find((entry) => entry && !this.firedEvents.has(entry.id));
+      if (event) {
+        this.firedEvents.add(event.id);
+        this.pendingEvent = event;
+        this.paused = true;
+      }
+    }
     const unlocks = this.treeFocuses.filter(
-      (other) => other.prerequisites?.includes(focus.id) && !this.completedFocuses.has(other.id),
+      (other) => (other.prerequisites?.includes(focus.id) || other.prerequisitesAny?.includes(focus.id)) && !this.completedFocuses.has(other.id),
     );
     const unlockText = unlocks.length > 0 ? ` Unlocked: ${unlocks.map((entry) => entry.name).join(', ')}.` : '';
     this.notify('good', 'Focus completed', `${focus.name} completed.${unlockText}`, 'focus');
@@ -965,12 +1044,34 @@ export class GameState {
 
   // ---------------------------------------------------------------- events
 
+  private eventConditionsMet(event: GameEventDef): boolean {
+    const conditions = event.conditions;
+    if (!conditions) return true;
+    if (typeof conditions.minStability === 'number' && this.stability < conditions.minStability) return false;
+    if (typeof conditions.maxStability === 'number' && this.stability > conditions.maxStability) return false;
+    if (typeof conditions.minLegitimacy === 'number' && this.political.legitimacy < conditions.minLegitimacy) return false;
+    if (typeof conditions.maxLegitimacy === 'number' && this.political.legitimacy > conditions.maxLegitimacy) return false;
+    if (typeof conditions.minTension === 'number' && this.political.tension < conditions.minTension) return false;
+    if (typeof conditions.maxTension === 'number' && this.political.tension > conditions.maxTension) return false;
+    if (typeof conditions.minRevolutionSupport === 'number' && this.political.revolutionSupport < conditions.minRevolutionSupport) return false;
+    if (conditions.systems?.length && !conditions.systems.includes(this.political.systemId)) return false;
+    if (conditions.ideologies?.length && !conditions.ideologies.includes(this.political.ideology)) return false;
+    if (conditions.flags?.some((flag) => !this.politics.hasFlag(flag))) return false;
+    if (conditions.notFlags?.some((flag) => this.politics.hasFlag(flag))) return false;
+    if (conditions.minInfluence) {
+      const group = this.politics.group(conditions.minInfluence.group);
+      if (!group || group.influence < conditions.minInfluence.value) return false;
+    }
+    return true;
+  }
+
   private checkEvents(): void {
     if (this.pendingEvent) return;
-    for (const event of this.content.events) {
+    for (const event of [...this.content.events, ...this.content.politics.events]) {
       if (this.firedEvents.has(event.id)) continue;
       if (event.tag && event.tag !== this.country.tag) continue;
       if (this.isoDate < event.date) continue;
+      if (!this.eventConditionsMet(event)) continue;
       this.firedEvents.add(event.id);
       this.pendingEvent = event;
       this.paused = true;
@@ -984,8 +1085,336 @@ export class GameState {
     const option = event.options[optionIndex] ?? event.options[0];
     this.applyBundle(option?.bundle);
     sumRates(this.extraRates, option?.rates);
+    if (option?.political) this.applyPoliticalEffect(option.political);
+    if (event.political) this.recordHistory('crisis', event.title, option?.detail ?? event.body, 'scroll');
     this.notify('info', event.title, `${event.category}: ${option?.label ?? 'Acknowledged'}.`, 'decisions');
     this.pendingEvent = null;
+    if (option?.followUp) {
+      const followUp = this.content.politics.events.find((entry) => entry.id === option.followUp);
+      if (followUp && !this.firedEvents.has(followUp.id) && this.eventConditionsMet(followUp)) {
+        this.firedEvents.add(followUp.id);
+        this.pendingEvent = followUp;
+        this.paused = true;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- politics
+
+  get politicalSystem() {
+    return systemById(this.content.politics, this.political.systemId);
+  }
+
+  politicalContext(): PoliticalContext {
+    return { stability: this.stability, politicalPower: this.politicalPower, day: this.day };
+  }
+
+  recordHistory(type: PoliticalHistoryType, title: string, description: string, icon = 'scroll'): void {
+    this.politicalHistory.unshift({
+      id: this.takeId(),
+      day: this.day,
+      date: this.dateLabel,
+      type,
+      title,
+      description,
+      icon,
+      systemId: this.political.systemId,
+      leader: this.political.leaderName,
+    });
+    if (this.politicalHistory.length > 120) this.politicalHistory.length = 120;
+  }
+
+  politicalTransitions(): PoliticalTransitionDef[] {
+    const allowed = this.content.def.political?.transitions;
+    return this.content.politics.transitions.filter((entry) =>
+      !allowed || allowed.includes(entry.id),
+    ).filter((entry) => entry.kind === 'peaceful' || entry.kind === 'constitutional' || entry.kind === 'postwar');
+  }
+
+  transitionMissing(id: string): string[] {
+    const def = transitionById(this.content.politics, id);
+    if (!def) return ['Unknown transition'];
+    return this.politics.missingTransitionRequirements(def, this.politicalContext());
+  }
+
+  executeTransition(id: string, source: 'council' | 'focus' = 'council'): ActionResult {
+    const def = transitionById(this.content.politics, id);
+    if (!def) return { ok: false, message: 'Unknown transition.' };
+    if (def.kind === 'coup' || (def.kind === 'revolution' && source !== 'focus')) return { ok: false, message: 'This transition must be resolved through its own political mechanism.' };
+    const missing = this.politics.missingTransitionRequirements(def, this.politicalContext());
+    if (source !== 'focus' && missing.length > 0) return { ok: false, message: `Missing: ${missing.join(', ')}.` };
+    this.politicalPower = Math.max(0, this.politicalPower - def.cost);
+    this.political.systemId = def.targetSystemId;
+    if (def.targetIdeology) this.political.ideology = def.targetIdeology;
+    if (def.targetLeaderName) this.political.leaderName = def.targetLeaderName;
+    if (def.targetLeaderTitle) this.political.leaderTitle = def.targetLeaderTitle;
+    if (typeof def.legitimacyAfter === 'number') this.political.legitimacy = clamp(def.legitimacyAfter);
+    if (typeof def.stabilityAfter === 'number') this.stability = clamp(def.stabilityAfter);
+    for (const change of def.groupChanges ?? []) {
+      const group = this.politics.group(change.name);
+      if (!group) continue;
+      if (typeof change.popularity === 'number') group.popularity = clamp(group.popularity + change.popularity);
+      if (typeof change.influence === 'number') group.influence = clamp100(group.influence + change.influence);
+      if (change.inGovernment) {
+        for (const entry of this.political.groups) entry.inGovernment = false;
+        group.inGovernment = true;
+      }
+    }
+    for (const flag of def.unlockFlags ?? []) this.politics.addFlag(flag);
+    this.political.tension = clamp100(this.political.tension - 6);
+    this.cancelInvalidFocus();
+    this.recordHistory('system', def.historyTitle, def.historyText, def.icon);
+    this.notify('good', def.historyTitle, def.historyText, 'politics');
+    return { ok: true, message: def.historyTitle };
+  }
+
+  private cancelInvalidFocus(): void {
+    if (!this.focus) return;
+    const active = this.focusById(this.focus.id);
+    if (!active) return;
+    if (this.focusState(active.id) !== 'invalidated') return;
+    this.focus = null;
+    this.recordHistory('crisis', 'A Focus Was Cancelled', `${active.name} was abandoned because the new constitution closed its political path. Its political power cost was not refunded.`, 'scroll');
+    this.notify('warn', 'Focus cancelled', `${active.name} was invalidated by the political transition.`, 'focus');
+  }
+
+  useMechanicAction(id: string): ActionResult {
+    const action = this.politics.mechanic()?.actions.find((entry) => entry.id === id);
+    if (!action) return { ok: false, message: 'Unknown political action.' };
+    if (this.politicalPower < action.cost) return { ok: false, message: `Requires ${action.cost} political power.` };
+    this.politicalPower -= action.cost;
+    this.applyEffects(action.effects);
+    this.notify('info', action.name, action.description, 'politics');
+    return { ok: true, message: action.name };
+  }
+
+  campaignGroup(name: string): ActionResult {
+    const group = this.politics.group(name);
+    if (!group) return { ok: false, message: 'Unknown political group.' };
+    const cost = 15;
+    if (this.politicalPower < cost) return { ok: false, message: `Requires ${cost} political power.` };
+    this.politicalPower -= cost;
+    group.popularity = clamp(group.popularity + 0.02);
+    group.influence = clamp100(group.influence + 3);
+    this.political.tension = clamp100(this.political.tension + 1);
+    this.notify('info', 'Campaign launched', `${group.name} gains public support in the constituencies.`, 'politics');
+    return { ok: true, message: `${group.name} campaign launched.` };
+  }
+
+  suppressGroup(name: string): ActionResult {
+    const group = this.politics.group(name);
+    if (!group) return { ok: false, message: 'Unknown political group.' };
+    const cost = 20;
+    if (this.politicalPower < cost) return { ok: false, message: `Requires ${cost} political power.` };
+    this.politicalPower -= cost;
+    group.popularity = clamp(group.popularity - 0.02);
+    group.influence = clamp100(group.influence - 2);
+    this.political.tension = clamp100(this.political.tension + 3);
+    this.stability = clamp(this.stability - 0.005);
+    this.notify('warn', 'Opposition suppressed', `${group.name} loses influence, but the political temperature rises.`, 'politics');
+    return { ok: true, message: `${group.name} suppressed.` };
+  }
+
+  revolutionStatus(): { ready: boolean; missing: string[]; strength: number } {
+    const missing: string[] = [];
+    if (this.political.revolutionSupport < 30) missing.push('Revolutionary support 30');
+    if (this.political.revolutionOrganization < 20) missing.push('Revolutionary organisation 20');
+    if (this.stability > 0.55 && this.political.legitimacy > 0.4) missing.push('Stability below 55% or legitimacy below 40%');
+    if (this.day - this.political.lastRevolutionDay < 180) missing.push('A revolutionary attempt is still being reorganised');
+    return { ready: missing.length === 0, missing, strength: Math.round(this.politics.revolutionStrength(this.politicalContext())) };
+  }
+
+  launchRevolution(): ActionResult {
+    const status = this.revolutionStatus();
+    if (!status.ready) return { ok: false, message: `Missing: ${status.missing.join(', ')}.` };
+    const strength = this.politics.revolutionStrength(this.politicalContext());
+    this.political.lastRevolutionDay = this.day;
+    if (strength >= 45) {
+      const leader = this.politics.strongestGroup('communism');
+      this.political.systemId = 'revolutionary_state';
+      this.political.mechanicId = 'revolutionary_support';
+      this.political.ideology = 'communism';
+      this.political.leaderName = leader?.leader ?? 'Revolutionary Council';
+      this.political.leaderTitle = 'Chair of the Revolutionary Council';
+      this.political.legitimacy = 0.5;
+      this.political.tension = 35;
+      this.political.revolutionSupport = clamp100(this.political.revolutionSupport + 10);
+      if (leader) {
+        for (const group of this.political.groups) group.inGovernment = false;
+        leader.inGovernment = true;
+      }
+      this.politics.addFlag('workers_government');
+      this.stability = 0.35;
+      this.cancelInvalidFocus();
+      this.recordHistory('revolution', 'The Revolution Triumphs', 'The old government has fallen. Workers\' councils and revolutionary committees have proclaimed a new state.', 'flame');
+      this.notify('bad', 'Revolution', 'The revolutionary movement has taken power and proclaimed a new government.', 'politics');
+      return { ok: true, message: 'The revolution has triumphed.' };
+    }
+    this.political.revolutionSupport = clamp100(this.political.revolutionSupport - 12);
+    this.political.revolutionOrganization = clamp100(this.political.revolutionOrganization - 8);
+    this.political.governmentLoyalty = clamp100(this.political.governmentLoyalty + 6);
+    this.stability = clamp(this.stability - 0.08);
+    this.political.tension = clamp100(this.political.tension + 10);
+    this.recordHistory('crisis', 'The Revolution is Defeated', 'The uprising was isolated and broken. The government has survived, but its authority rests on repression rather than consent.', 'flame');
+    this.notify('warn', 'Revolution defeated', 'The revolutionary attempt failed. The government remains in power, weakened and embittered.', 'politics');
+    return { ok: false, message: 'The revolution was defeated.' };
+  }
+
+  coupTargets() {
+    return this.political.groups.filter((group) => !group.inGovernment && group.influence >= 15);
+  }
+
+  coupChance(name: string): number {
+    return Math.max(5, Math.min(95, Math.round(this.politics.coupStrength(name, this.politicalContext()))));
+  }
+
+  attemptCoup(name: string): ActionResult {
+    const group = this.politics.group(name);
+    if (!group) return { ok: false, message: 'Unknown political group.' };
+    if (group.inGovernment) return { ok: false, message: 'A governing group cannot coup itself.' };
+    if (this.day - this.political.lastCoupDay < 180) return { ok: false, message: 'The officer corps is still reorganising after the last attempt.' };
+    const strength = this.politics.coupStrength(name, this.politicalContext());
+    this.political.lastCoupDay = this.day;
+    if (strength >= 48) {
+      for (const entry of this.political.groups) entry.inGovernment = false;
+      group.inGovernment = true;
+      this.political.systemId = 'military_junta';
+      this.political.mechanicId = 'council_authority';
+      this.political.ideology = 'authoritarian';
+      this.political.leaderName = group.leader;
+      this.political.leaderTitle = 'Chairman of the Military Council';
+      this.political.legitimacy = 0.46;
+      this.stability = 0.34;
+      this.political.tension = clamp100(this.political.tension + 12);
+      this.politics.addFlag('military_rule');
+      this.cancelInvalidFocus();
+      this.recordHistory('coup', 'The Army Takes Power', `${group.name}, led by ${group.leader}, has seized the government. The constitution is suspended and the parties are dissolved.`, 'swords');
+      this.notify('bad', 'Coup d\'état', `${group.leader} has seized power in the name of order.`, 'politics');
+      return { ok: true, message: 'The coup succeeded.' };
+    }
+    group.influence = clamp100(group.influence - 9);
+    this.political.governmentLoyalty = clamp100(this.political.governmentLoyalty + 5);
+    this.stability = clamp(this.stability - 0.05);
+    this.political.tension = clamp100(this.political.tension + 9);
+    this.recordHistory('crisis', 'The Coup Fails', `An attempt by ${group.name} to seize power collapsed. Its leaders have been arrested or driven into exile.`, 'swords');
+    this.notify('warn', 'Coup defeated', `${group.name} failed to seize power. The government has survived, at a price.`, 'politics');
+    return { ok: false, message: 'The coup failed.' };
+  }
+
+  // ---------------------------------------------------------------- save / load
+
+  saveKey(): string {
+    return `iron-frontiers-save-${this.country.tag}`;
+  }
+
+  saveGame(): boolean {
+    try {
+      const data = {
+        version: 1,
+        tag: this.country.tag,
+        date: this.date.toISOString(),
+        day: this.day,
+        paused: this.paused,
+        speed: this.speed,
+        politicalPower: this.politicalPower,
+        stability: this.stability,
+        warSupport: this.warSupport,
+        manpower: this.manpower,
+        treasury: this.treasury,
+        civilianFactories: this.civilianFactories,
+        militaryFactories: this.militaryFactories,
+        dockyards: this.dockyards,
+        infrastructure: this.infrastructure,
+        resources: this.resources,
+        focus: this.focus,
+        completedFocuses: [...this.completedFocuses],
+        bypassedFocuses: [...this.bypassedFocuses],
+        extraRates: this.extraRates,
+        research: this.research,
+        completedTechs: [...this.completedTechs],
+        lines: this.lines,
+        stockpile: this.stockpile,
+        construction: this.construction,
+        nextId: this.nextId,
+        advisors: this.advisors,
+        divisions: this.divisions,
+        commanders: this.commanders,
+        notifications: this.notifications,
+        unread: this.unread,
+        firedEvents: [...this.firedEvents],
+        selectedCountryId: this.selectedCountryId,
+        selectedProvinceId: this.selectedProvinceId,
+        relationBonus: [...this.relationBonus.entries()],
+        tradeAgreements: [...this.tradeAgreements],
+        guarantees: [...this.guarantees],
+        operatives: this.operatives,
+        missionLog: this.missionLog,
+        lastDecisionDay: [...this.lastDecisionDay.entries()],
+        political: this.political,
+        politicalHistory: this.politicalHistory,
+      };
+      localStorage.setItem(this.saveKey(), JSON.stringify(data));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  loadGame(): boolean {
+    try {
+      const raw = localStorage.getItem(this.saveKey());
+      if (!raw) return false;
+      return this.restoreSave(JSON.parse(raw));
+    } catch {
+      return false;
+    }
+  }
+
+  restoreSave(data: Record<string, unknown>): boolean {
+    if (!data || data.version !== 1 || data.tag !== this.country.tag) return false;
+    this.date = new Date(String(data.date));
+    this.day = Number(data.day ?? 0);
+    this.paused = Boolean(data.paused);
+    this.speed = Number(data.speed ?? 3);
+    this.politicalPower = Number(data.politicalPower ?? 0);
+    this.stability = clamp(Number(data.stability ?? 0.5));
+    this.warSupport = clamp(Number(data.warSupport ?? 0.3));
+    this.manpower = Number(data.manpower ?? 0);
+    this.treasury = Number(data.treasury ?? 0);
+    this.civilianFactories = Number(data.civilianFactories ?? 1);
+    this.militaryFactories = Number(data.militaryFactories ?? 0);
+    this.dockyards = Number(data.dockyards ?? 0);
+    this.infrastructure = Number(data.infrastructure ?? 0);
+    this.resources = { ...(data.resources as CountryResources) };
+    this.focus = (data.focus as FocusProgress | null) ?? null;
+    this.completedFocuses = new Set(data.completedFocuses as string[]);
+    this.bypassedFocuses = new Set((data.bypassedFocuses as string[]) ?? []);
+    this.extraRates = (data.extraRates as RateBundle) ?? {};
+    this.research = (data.research as (ResearchProgress | null)[]) ?? [];
+    this.completedTechs = new Set(data.completedTechs as string[]);
+    this.lines = (data.lines as ProductionLineState[]) ?? [];
+    this.stockpile = (data.stockpile as Record<string, number>) ?? {};
+    this.construction = (data.construction as ConstructionState[]) ?? [];
+    this.nextId = Number(data.nextId ?? 1);
+    this.advisors = (data.advisors as Record<AdvisorSlot, string | null>) ?? this.advisors;
+    this.divisions = (data.divisions as DivisionState[]) ?? [];
+    this.commanders = (data.commanders as CommanderDef[]) ?? [];
+    this.notifications = (data.notifications as NotificationEntry[]) ?? [];
+    this.unread = Number(data.unread ?? 0);
+    this.firedEvents = new Set(data.firedEvents as string[]);
+    this.selectedCountryId = Number(data.selectedCountryId ?? this.countryId);
+    this.selectedProvinceId = Number(data.selectedProvinceId ?? 0);
+    this.relationBonus = new Map(data.relationBonus as [number, number][]);
+    this.tradeAgreements = new Set(data.tradeAgreements as number[]);
+    this.guarantees = new Set(data.guarantees as number[]);
+    this.operatives = (data.operatives as OperativeState[]) ?? [];
+    this.missionLog = (data.missionLog as NotificationEntry[]) ?? [];
+    this.lastDecisionDay = new Map(data.lastDecisionDay as [string, number][]);
+    this.political = data.political as PoliticalState;
+    this.politics = new PoliticalManager(this.political, this.content.politics);
+    this.politicalHistory = (data.politicalHistory as PoliticalHistoryEntry[]) ?? [];
+    this.pendingEvent = null;
+    return true;
   }
 
   // ---------------------------------------------------------------- alerts
@@ -1049,6 +1478,14 @@ export class GameState {
     const deficitPenalty = this.treasury < 0 ? 0.0008 : 0;
     this.stability = clamp(this.stability + (rates.stabilityDrift ?? 0) - deficitPenalty);
     this.warSupport = clamp(this.warSupport + (rates.warSupportDrift ?? 0));
+
+    // Political temperature and revolutionary pressure evolve from the material situation.
+    this.political.tension = clamp100(this.political.tension - 0.012);
+    const pressure = (1 - this.stability) * 0.055 + (1 - this.political.legitimacy) * 0.04;
+    this.political.revolutionSupport = clamp100(this.political.revolutionSupport + pressure - 0.025);
+    this.political.revolutionOrganization = clamp100(this.political.revolutionOrganization + pressure * 0.45);
+    this.political.governmentLoyalty = clamp100(this.political.governmentLoyalty + (this.stability > 0.5 ? 0.02 : -0.03));
+    if (this.stability < 0.25) this.political.tension = clamp100(this.political.tension + 0.03);
 
     if (this.focus) {
       this.focus.elapsed += 1;

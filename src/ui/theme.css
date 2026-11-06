@@ -2052,6 +2052,122 @@ svg.if-ico {
   cursor: grabbing;
 }
 
+.if-inner-circle {
+  position: absolute;
+  left: clamp(20px, 31%, 430px);
+  bottom: 8px;
+  z-index: 4;
+  width: 310px;
+  padding: 10px;
+  border: 1px solid var(--gold-dim);
+  background:
+    linear-gradient(180deg, rgba(40, 46, 51, 0.98), rgba(18, 22, 26, 0.98));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(197, 164, 106, 0.08);
+  cursor: default;
+}
+
+.if-inner-circle__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.if-inner-circle__portrait {
+  width: 58px;
+  height: 58px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+  background: #11151a;
+}
+
+.if-inner-circle__portrait .if-portrait-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.if-inner-circle__identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.if-inner-circle__eyebrow {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.if-inner-circle__name {
+  overflow: hidden;
+  font: 600 14px/1.15 var(--font-display);
+  color: #f2e8d3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.if-inner-circle__title,
+.if-inner-circle__system {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.if-inner-circle__system {
+  margin-top: 2px;
+  color: var(--gold-dim);
+}
+
+.if-inner-circle__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 7px;
+}
+
+.if-inner-circle__grouphead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.if-inner-circle__groupname {
+  overflow: hidden;
+  font-size: 10px;
+  color: #c8c1b2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.if-inner-circle__influence {
+  font-size: 9px;
+  color: var(--gold-bright);
+}
+
+.if-inner-circle .if-meter {
+  height: 4px;
+}
+
+.if-inner-circle__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-soft);
+}
+
+@media (max-width: 980px) {
+  .if-inner-circle {
+    display: none;
+  }
+}
+
 .if-focus-main::after {
   content: '';
   position: absolute;
@@ -2079,6 +2195,12 @@ svg.if-ico {
   fill: none;
   stroke: #454d57;
   stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.if-focus-main.is-far .if-focus-node__name,
+.if-focus-main.is-far .if-focus-node__days {
+  display: none;
 }
 
 .if-link--done {
@@ -4247,4 +4369,281 @@ svg.if-ico {
 .if-hud .if-stage > .if-screen--map .if-mapcard,
 .if-hud .if-stage > .if-screen--map button {
   pointer-events: auto;
+}
+
+/* ------------------------------------------------ political simulation */
+.if-pol-system__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gold-bright);
+  margin-bottom: 4px;
+}
+
+.if-metricgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.if-mechanic {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.if-mechanic__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+
+.if-mechanic__name {
+  font-weight: 600;
+  color: #e4dbc7;
+  flex: 1;
+}
+
+.if-mechanic__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.if-revolution {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.if-movements {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.if-movement {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.015);
+  padding: 9px;
+}
+
+.if-movement.is-ruling {
+  border-color: rgba(197, 164, 106, 0.45);
+  background: rgba(197, 164, 106, 0.05);
+}
+
+.if-movement__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.if-movement__name {
+  font-weight: 600;
+  color: #e4dbc7;
+  flex: 1;
+}
+
+.if-movement__meta {
+  margin: 4px 0 7px;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.if-movement__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.if-movement__bar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.if-movement__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.if-transition {
+  border: 1px solid var(--border);
+  padding: 10px;
+  margin-bottom: 9px;
+  background: rgba(255, 255, 255, 0.015);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.if-transition.is-locked {
+  opacity: 0.72;
+}
+
+.if-transition__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.if-transition__name {
+  font-weight: 600;
+  color: #e4dbc7;
+  flex: 1;
+}
+
+.if-transition__body {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.if-transition__req {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 5px;
+  font-size: 10px;
+  color: #c98b7f;
+}
+
+.if-transition__ready {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #8fb383;
+}
+
+/* ------------------------------------------------ political history */
+.if-history-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 12px;
+  align-items: start;
+}
+
+.if-history-layout > .if-panel:last-child {
+  grid-column: 1 / -1;
+}
+
+.if-history-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.if-history-summary__system {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.if-history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.if-history-entry {
+  display: flex;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(66, 73, 82, 0.5);
+}
+
+.if-history-entry__marker {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--gold);
+}
+
+.if-history-entry__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.if-history-entry__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.if-history-entry__date {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.if-history-entry__title {
+  font-weight: 600;
+  color: #e4dbc7;
+}
+
+.if-history-entry__text {
+  margin-top: 4px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #aab1b9;
+}
+
+.if-history-entry__meta {
+  margin-top: 4px;
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.if-history-entry--revolution .if-history-entry__marker,
+.if-history-entry--coup .if-history-entry__marker {
+  border-color: #7a463d;
+  color: #d79a86;
+}
+
+.if-history-entry--system .if-history-entry__marker {
+  border-color: rgba(197, 164, 106, 0.5);
+}
+
+/* ------------------------------------------------ focus states */
+.if-focus-node.is-invalidated {
+  opacity: 0.38;
+  filter: grayscale(0.8);
+}
+
+.if-focus-node.is-invalidated .if-focus-node__tile {
+  border-style: dashed;
+  border-color: #6b3d36;
+}
+
+.if-focus-node.is-bypassed {
+  opacity: 0.72;
+}
+
+.if-focus-node.is-bypassed .if-focus-node__tile {
+  border-color: rgba(143, 179, 131, 0.55);
+  background: rgba(111, 155, 99, 0.1);
+}
+
+@media (max-width: 980px) {
+  .if-history-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

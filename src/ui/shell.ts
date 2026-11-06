@@ -15,6 +15,7 @@ import { mountMilitary } from './screens/military';
 import { mountDiplomacy } from './screens/diplomacy';
 import { mountIntelligence } from './screens/intelligence';
 import { mountDecisions } from './screens/decisions';
+import { mountHistory } from './screens/history';
 
 // Game shell: top bar, navigation, bottom clock, screen router, simulation clock and the shared
 // event modal. Screens are mounted into the stage and rebuilt through the ScreenContext.
@@ -37,6 +38,7 @@ const NAV: NavEntry[] = [
   { id: 'diplomacy', label: 'Diplomacy', icon: 'handshake', hotkey: '8' },
   { id: 'intelligence', label: 'Intel', icon: 'eye', hotkey: '9' },
   { id: 'decisions', label: 'Decisions', icon: 'scroll', hotkey: '0' },
+  { id: 'history', label: 'History', icon: 'book', hotkey: 'H' },
 ];
 
 const MOUNTS: Record<ScreenId, (ctx: ScreenContext) => Screen> = {
@@ -50,6 +52,7 @@ const MOUNTS: Record<ScreenId, (ctx: ScreenContext) => Screen> = {
   diplomacy: mountDiplomacy,
   intelligence: mountIntelligence,
   decisions: mountDecisions,
+  history: mountHistory,
 };
 
 const SPEEDS = [0, 0.12, 0.3, 0.65, 1.3, 2.6];
@@ -373,6 +376,25 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
       actions: [
         { label: 'Resume', className: 'if-btn--gold' },
         {
+          label: 'Save campaign',
+          className: 'if-btn--ghost',
+          onClick: () => toast(state.saveGame() ? 'Campaign saved to this browser.' : 'The campaign could not be saved.', state.saveGame() ? 'good' : 'bad'),
+        },
+        {
+          label: 'Load campaign',
+          className: 'if-btn--ghost',
+          onClick: () => {
+            const loaded = state.loadGame();
+            if (loaded) {
+              open(currentId);
+              updateHud();
+              toast('Campaign loaded. Political history restored.', 'good');
+            } else {
+              toast('No compatible save was found.', 'bad');
+            }
+          },
+        },
+        {
           label: 'Return to title',
           className: 'if-btn--danger',
           onClick: () => window.location.reload(),
@@ -413,6 +435,11 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
     const index = '1234567890'.indexOf(event.key);
     if (index >= 0) {
       open(NAV[index].id);
+      event.preventDefault();
+      return;
+    }
+    if (event.key.toLowerCase() === 'h') {
+      open('history');
       event.preventDefault();
       return;
     }

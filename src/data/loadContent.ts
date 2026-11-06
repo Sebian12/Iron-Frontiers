@@ -10,6 +10,7 @@ import genericTree from './focus-trees/generic.json';
 import ideologyData from './ideologies.json';
 import technologyData from './technologies.json';
 import { EVENTS } from './events';
+import { POLITICS_CONTENT, prepareCountryPolitics } from './politics';
 import { createGenericCountry } from './genericCountry';
 import { ideologyOf } from './geopolitics';
 
@@ -80,22 +81,28 @@ export function loadContent(world: World, countryId: number): ContentBundle {
   const def = authored ?? createGenericCountry(mapCountry, provincesOf(world, countryId), overlordName);
 
   const treeKey = def.focusTree in TREES ? def.focusTree : 'generic';
-  const tree = sanitiseTree(
+  const baseTree = sanitiseTree(
     structuredClone(TREES[treeKey]),
     authored ? def.name : `${def.name} (generic)`,
   );
 
   // A country with no authored tree still gets a national identity through its ideology.
   if (!authored) {
-    tree.country = def.name;
+    baseTree.country = def.name;
   }
 
+  // Political identity and branch pack are attached after the authored tree is validated, so
+  // configuration errors cannot damage the historical focuses.
+  const prepared = prepareCountryPolitics(def, baseTree);
+  const tree = sanitiseTree(prepared.tree, `${def.name} political branches`);
+
   return {
-    def,
+    def: prepared.def,
     tree,
     ideologies: ideologyIndex,
     technologies: TECHNOLOGIES,
     events: [...EVENTS].sort((a, b) => a.date.localeCompare(b.date)),
+    politics: POLITICS_CONTENT,
   };
 }
 

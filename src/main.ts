@@ -4,6 +4,7 @@ import { MapRenderer } from './render/mapRenderer';
 import { createStartMenu, showLoadingScreen } from './ui/menu';
 import { loadContent } from './data/loadContent';
 import { GameState } from './sim/gameState';
+import { runPoliticalSelfTests } from './sim/politicalTests';
 import { createGameShell, type GameShell } from './ui/shell';
 import { showTipAt, hideTipNow } from './ui/tooltip';
 import type { MapBridge } from './ui/screen';
@@ -121,6 +122,11 @@ async function start() {
     onStart: (countryId) => {
       const content = loadContent(world, countryId);
       const state = new GameState(world, content, countryId);
+      (window as unknown as { ironFrontiersDebug?: unknown }).ironFrontiersDebug = {
+        state,
+        content,
+        runPoliticalSelfTests: () => runPoliticalSelfTests(world, content, countryId),
+      };
       shell = createGameShell(state, content, bridge);
       document.body.appendChild(shell.element);
       map.setSelected(0);

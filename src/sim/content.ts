@@ -26,6 +26,7 @@ export interface EffectBundle {
   dockyards?: number;
   infrastructure?: number;
   treasury?: number;
+  researchSlots?: number;
 }
 
 /** Passive modifiers that feed the daily simulation. */
@@ -42,11 +43,44 @@ export interface RateBundle {
 
 export type EffectKind = 'positive' | 'negative' | 'neutral';
 
+/** Political changes carried by a focus, decision or event. All values are deltas unless stated. */
+export interface PoliticalEffect {
+  systemId?: string;
+  ideology?: IdeologyId;
+  leaderName?: string;
+  leaderTitle?: string;
+  legitimacy?: number;
+  tension?: number;
+  revolutionSupport?: number;
+  revolutionOrganization?: number;
+  governmentLoyalty?: number;
+  stability?: number;
+  warSupport?: number;
+  politicalPower?: number;
+  mechanicValue?: number;
+  group?: PoliticalGroupChange;
+  groups?: PoliticalGroupChange[];
+  flags?: string[];
+  removeFlags?: string[];
+  transitionId?: string;
+  historyTitle?: string;
+  historyText?: string;
+  historyIcon?: string;
+}
+
+export interface PoliticalGroupChange {
+  name: string;
+  popularity?: number;
+  influence?: number;
+  inGovernment?: boolean;
+}
+
 export interface Effect {
   text: string;
   kind?: EffectKind;
   bundle?: EffectBundle;
   rates?: RateBundle;
+  political?: PoliticalEffect;
 }
 
 export interface FocusDef {
@@ -65,6 +99,15 @@ export interface FocusDef {
   consequences?: Effect[];
   x: number;
   y: number;
+  /** Political branch metadata. */
+  branch?: string;
+  branchName?: string;
+  bypassable?: boolean;
+  requiresSystem?: string[];
+  requiresIdeology?: IdeologyId[];
+  requiresFlag?: string;
+  prerequisitesAny?: string[];
+  events?: string[];
 }
 
 export interface FocusTreeDef {
@@ -100,6 +143,9 @@ export interface PartyDef {
   popularity: number; // 0..1
   inGovernment: boolean;
   description?: string;
+  leader?: string;
+  influence?: number; // 0..100, separate from public popularity
+  objective?: string;
 }
 
 export interface AdvisorDef {
@@ -249,6 +295,7 @@ export interface CountryDef {
   researchSlots: number;
   focusTree: string;
   agency?: { name: string; description: string };
+  political?: CountryPoliticalDef;
 }
 
 export interface GameEventOption {
@@ -257,6 +304,8 @@ export interface GameEventOption {
   bundle?: EffectBundle;
   rates?: RateBundle;
   stabilityRisk?: number;
+  political?: PoliticalEffect;
+  followUp?: string;
 }
 
 export interface GameEventDef {
@@ -267,6 +316,24 @@ export interface GameEventDef {
   category: string;
   body: string;
   options: GameEventOption[];
+  political?: boolean;
+  conditions?: PoliticalEventConditions;
+  repeatable?: boolean;
+}
+
+export interface PoliticalEventConditions {
+  minStability?: number;
+  maxStability?: number;
+  minLegitimacy?: number;
+  maxLegitimacy?: number;
+  minTension?: number;
+  maxTension?: number;
+  minRevolutionSupport?: number;
+  minInfluence?: { group: string; value: number };
+  systems?: string[];
+  ideologies?: IdeologyId[];
+  flags?: string[];
+  notFlags?: string[];
 }
 
 export interface ContentBundle {
@@ -274,5 +341,104 @@ export interface ContentBundle {
   tree: FocusTreeDef;
   ideologies: Record<string, IdeologyDef>;
   technologies: TechDef[];
+  events: GameEventDef[];
+  politics: PoliticsContent;
+}
+
+// ---------------------------------------------------------------- political configuration
+export type GovernmentFamily = 'democracy' | 'monarchy' | 'authoritarian' | 'revolutionary' | 'military' | 'federal';
+
+export type PoliticalMechanicId =
+  | 'parliamentary_influence'
+  | 'royal_legitimacy'
+  | 'regional_autonomy'
+  | 'revolutionary_support'
+  | 'council_authority';
+
+export interface GovernmentDef {
+  id: string;
+  name: string;
+  family: GovernmentFamily;
+  description: string;
+  icon: string;
+  defaultIdeology: IdeologyId;
+  defaultMechanic: PoliticalMechanicId;
+  legitimacyLabel: string;
+}
+
+export interface PoliticalGroupSeed {
+  name: string;
+  ideology: IdeologyId;
+  popularity: number;
+  influence: number;
+  inGovernment: boolean;
+  leader: string;
+  objective: string;
+}
+
+export interface CountryPoliticalDef {
+  systemId: string;
+  mechanicId?: PoliticalMechanicId;
+  mechanicValue?: number;
+  tension?: number;
+  groups: PoliticalGroupSeed[];
+  transitions?: string[];
+  flags?: string[];
+  branchFlavour?: 'germany' | 'soviet' | 'britain' | 'generic';
+}
+
+export interface PoliticalMechanicActionDef {
+  id: string;
+  name: string;
+  description: string;
+  cost: number; // political power
+  effects: Effect[];
+}
+
+export interface PoliticalMechanicDef {
+  id: PoliticalMechanicId;
+  name: string;
+  description: string;
+  icon: string;
+  valueLabel: string;
+  actions: PoliticalMechanicActionDef[];
+}
+
+export type TransitionKind = 'peaceful' | 'constitutional' | 'coup' | 'revolution' | 'postwar';
+
+export interface TransitionRequirementDef {
+  minStability?: number;
+  minLegitimacy?: number;
+  minMechanic?: number;
+  minGroupInfluence?: { group: string; value: number };
+  requiredFlags?: string[];
+  anyFlags?: string[];
+}
+
+export interface PoliticalTransitionDef {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  kind: TransitionKind;
+  targetSystemId: string;
+  targetIdeology?: IdeologyId;
+  targetLeaderName?: string;
+  targetLeaderTitle?: string;
+  cost: number;
+  fromSystems?: string[];
+  requirements: TransitionRequirementDef;
+  legitimacyAfter?: number;
+  stabilityAfter?: number;
+  groupChanges?: PoliticalGroupChange[];
+  unlockFlags?: string[];
+  historyTitle: string;
+  historyText: string;
+}
+
+export interface PoliticsContent {
+  governments: GovernmentDef[];
+  mechanics: PoliticalMechanicDef[];
+  transitions: PoliticalTransitionDef[];
   events: GameEventDef[];
 }

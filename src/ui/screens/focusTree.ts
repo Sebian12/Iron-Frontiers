@@ -1,20 +1,21 @@
 import type { FocusCategory } from '../../sim/content';
 import { FOCUS_CATEGORIES } from '../../sim/content';
 import type { FocusDef } from '../../sim/content';
-import { button, div, effectList, icon, sectionLabel, span, tag, withTip } from '../components';
+import { button, div, effectList, icon, meter, portrait, sectionLabel, span, tag, withTip } from '../components';
 import { iconSvg } from '../icons';
 import type { Screen, ScreenContext } from '../screen';
-import { screenFrame } from '../screen';
+import { ideologyName, screenFrame } from '../screen';
 import { days } from '../format';
 
 // Interactive national focus tree. Nodes are absolutely positioned DOM tiles over an SVG link
 // layer; pan and zoom transform the whole world, so tooltips and hit-testing stay native DOM.
 
-const COL = 200;
-const ROW = 150;
+const COL = 100;
+const ROW = 280;
 const PAD_X = 150;
 const PAD_Y = 120;
 const TILE = 84;
+const MIN_SCALE = 0.04;
 
 interface TreeUiState {
   x: number;
@@ -24,6 +25,8 @@ interface TreeUiState {
   query: string;
   categories: Set<FocusCategory>;
   fitted: boolean;
+  worldWidth: number;
+  worldHeight: number;
 }
 
 const uiStates = new Map<string, TreeUiState>();
@@ -39,6 +42,8 @@ function stateFor(key: string, focus?: FocusDef): TreeUiState {
       query: '',
       categories: new Set(FOCUS_CATEGORIES.map((entry) => entry.id)),
       fitted: false,
+      worldWidth: 0,
+      worldHeight: 0,
     };
     uiStates.set(key, existing);
   }
@@ -47,10 +52,12 @@ function stateFor(key: string, focus?: FocusDef): TreeUiState {
 
 const STATUS_LABEL: Record<string, string> = {
   completed: 'Completed',
+  bypassed: 'Bypassed',
   active: 'In progress',
   available: 'Available',
   locked: 'Locked',
-  exclusive: 'Unavailable',
+  exclusive: 'Mutually exclusive',
+  invalidated: 'Invalidated by constitution',
 };
 
 export function mountFocusTree(ctx: ScreenContext): Screen {
@@ -58,9 +65,18 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   const tree = content.tree;
   const ui = stateFor(state.country.tag, tree.focuses.find((focus) => focus.id === state.focus?.id) ?? tree.focuses.find((focus) => state.focusState(focus.id) === 'available'));
 
+  const worldWidth = PAD_X * 2 + Math.max(...tree.focuses.map((focus) => focus.x)) * COL;
+  const worldHeight = PAD_Y * 2 + Math.max(...tree.focuses.map((focus) => focus.y)) * ROW;
+  // A cached camera from an older or different tree must not hide the new layout.
+  if (ui.worldWidth !== worldWidth || ui.worldHeight !== worldHeight) {
+    ui.worldWidth = worldWidth;
+    ui.worldHeight = worldHeight;
+    ui.fitted = false;
+  }
+
   const positionOf = (focus: FocusDef) => ({ px: PAD_X + focus.x * COL, py: PAD_Y + focus.y * ROW });
-  const treeWidth = () => PAD_X * 2 + Math.max(...tree.focuses.map((focus) => focus.x)) * COL;
-  const treeHeight = () => PAD_Y * 2 + Math.max(...tree.focuses.map((focus) => focus.y)) * ROW;
+  const treeWidth = () => worldWidth;
+  const treeHeight = () => worldHeight;
 
   const completedCount = tree.focuses.filter((focus) => state.completedFocuses.has(focus.id)).length;
 
@@ -119,6 +135,50 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     legend.append(row);
   }
   main.append(zoomCtl, legend);
+
+  // A compact in-tree cabinet panel, anchored under the political block. It mirrors the
+  // campaign's real leader and factions and opens the full politics screen rather than acting
+  // as a decorative mock-up.
+  const innerCircle = div('if-inner-circle');
+  innerCircle.setAttribute('aria-label', 'Inner circle');
+  const circleHead = div('if-inner-circle__head');
+  const face = portrait(
+    state.political.leaderName || content.def.leader.portrait,
+    content.def.accent,
+    'lg',
+    'if-inner-circle__portrait',
+  );
+  const circleInfo = div('if-inner-circle__identity');
+  circleInfo.append(
+    span('if-inner-circle__eyebrow', 'Inner Circle'),
+    span('if-inner-circle__name', state.political.leaderName),
+    span('if-inner-circle__title', state.political.leaderTitle),
+    span('if-inner-circle__system', ideologyName(state, state.political.ideology)),
+  );
+  circleHead.append(face, circleInfo);
+
+  const circleGroups = div('if-inner-circle__groups');
+  for (const group of [...state.political.groups].sort((a, b) => b.influence - a.influence).slice(0, 4)) {
+    const row = div('if-inner-circle__group');
+    const rowHead = div('if-inner-circle__grouphead');
+    rowHead.append(
+      span('if-inner-circle__groupname', group.name),
+      span('if-inner-circle__influence', `${Math.round(group.influence)}%`),
+    );
+    row.append(rowHead, meter(group.influence / 100, group.inGovernment ? 'gold' : 'blue'));
+    circleGroups.append(row);
+  }
+
+  const circleFoot = div('if-inner-circle__foot');
+  circleFoot.append(
+    button('Open cabinet', 'if-btn if-btn--sm if-btn--block', () => ctx.open('politics')),
+  );
+  innerCircle.title = 'Advisors and factions shape the next settlement.';
+  innerCircle.append(circleHead, circleGroups, circleFoot);
+  innerCircle.addEventListener('pointerdown', (event) => event.stopPropagation());
+  innerCircle.addEventListener('wheel', (event) => event.stopPropagation(), { passive: true });
+  main.append(innerCircle);
+
   layout.append(main);
 
   // ---------------------------------------------------------------- details panel
@@ -190,13 +250,26 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   function linkPath(parent: FocusDef, child: FocusDef): string {
     const from = positionOf(parent);
     const to = positionOf(child);
-    const x1 = from.px;
-    const y1 = from.py + TILE + 22;
-    const x2 = to.px;
-    const y2 = to.py - 4;
-    const bend = Math.max(30, Math.abs(y2 - y1) * 0.45);
-    return `M ${x1} ${y1} C ${x1} ${y1 + bend}, ${x2} ${y2 - bend}, ${x2} ${y2}`;
-}
+    const vertical = to.py >= from.py + TILE + 20 || from.py >= to.py + TILE + 20;
+    if (vertical) {
+      const x1 = from.px;
+      const y1 = from.py + TILE + 22;
+      const x2 = to.px;
+      const y2 = to.py - 4;
+      const bend = Math.max(30, Math.abs(y2 - y1) * 0.45);
+      return `M ${x1} ${y1} C ${x1} ${y1 + bend}, ${x2} ${y2 - bend}, ${x2} ${y2}`;
+    }
+
+    // Same-row and upward links leave through the side of the tile and enter the target from
+    // the opposite side. This avoids the large vertical loops that made branch joins hard to read.
+    const towardsRight = to.px >= from.px;
+    const x1 = from.px + (towardsRight ? TILE / 2 : -TILE / 2);
+    const y1 = from.py + TILE / 2;
+    const x2 = to.px + (towardsRight ? -TILE / 2 : TILE / 2);
+    const y2 = to.py + TILE / 2;
+    const bend = (x2 - x1) * 0.5;
+    return `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`;
+  }
   for (const focus of tree.focuses) {
     for (const parentId of focus.prerequisites ?? []) {
       const parent = tree.focuses.find((entry) => entry.id === parentId);
@@ -228,7 +301,7 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     const status = state.focusState(focus.id);
     const tile = document.createElement('span');
     tile.className = 'if-focus-node__tile';
-    tile.innerHTML = `${iconSvg(focus.icon)}${status === 'completed' ? '<span class="if-focus-node__badge">✓</span>' : status === 'exclusive' ? '<span class="if-focus-node__badge">✕</span>' : ''}<span class="if-focus-node__days">${focus.days}d</span>`;
+    tile.innerHTML = `${iconSvg(focus.icon)}${status === 'completed' || status === 'bypassed' ? '<span class="if-focus-node__badge">✓</span>' : status === 'exclusive' || status === 'invalidated' ? '<span class="if-focus-node__badge">✕</span>' : ''}<span class="if-focus-node__days">${focus.days}d</span>`;
     if (status === 'active') {
       const progress = document.createElement('span');
       progress.className = 'if-focus-node__progress';
@@ -257,22 +330,32 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   }
 
   // ---------------------------------------------------------------- camera
+  let autoFit = !ui.fitted;
+  let observedWidth = 0;
+  let observedHeight = 0;
+
   function applyTransform(): void {
     world.style.transform = `translate(${ui.x}px, ${ui.y}px) scale(${ui.scale})`;
+    // At the whole-tree view the labels are smaller than a pixel and turn into vertical noise.
+    // Keep the branch silhouettes readable there; restore names as soon as the player zooms in.
+    main.classList.toggle('is-far', ui.scale < 0.26);
   }
 
   function fit(): void {
     const width = main.clientWidth || 1000;
     const height = main.clientHeight || 700;
-    const scale = Math.max(0.34, Math.min(1, Math.min((width - 60) / treeWidth(), (height - 60) / treeHeight())));
+    const scale = Math.max(MIN_SCALE, Math.min(1, Math.min((width - 60) / treeWidth(), (height - 60) / treeHeight())));
     ui.scale = scale;
     ui.x = (width - treeWidth() * scale) / 2;
     ui.y = (height - treeHeight() * scale) / 2;
     ui.fitted = true;
+    observedWidth = width;
+    observedHeight = height;
     applyTransform();
   }
 
   function centerOn(px: number, py: number): void {
+    autoFit = false;
     const width = main.clientWidth;
     const height = main.clientHeight;
     ui.x = width / 2 - px * ui.scale;
@@ -281,7 +364,8 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   }
 
   function zoomBy(factor: number, cx = main.clientWidth / 2, cy = main.clientHeight / 2): void {
-    const next = Math.max(0.32, Math.min(1.8, ui.scale * factor));
+    autoFit = false;
+    const next = Math.max(MIN_SCALE, Math.min(1.8, ui.scale * factor));
     const k = next / ui.scale;
     ui.x = cx - (cx - ui.x) * k;
     ui.y = cy - (cy - ui.y) * k;
@@ -317,7 +401,10 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     if (!dragging) return;
     const dx = event.clientX - lastX;
     const dy = event.clientY - lastY;
-    if (Math.abs(dx) + Math.abs(dy) > 3) dragged = true;
+    if (Math.abs(dx) + Math.abs(dy) > 3) {
+      dragged = true;
+      autoFit = false;
+    }
     ui.x += dx;
     ui.y += dy;
     lastX = event.clientX;
@@ -402,7 +489,7 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     const meta = div('if-focus-details__meta');
     meta.append(
       tag(FOCUS_CATEGORIES.find((entry) => entry.id === focus.category)?.name ?? focus.category, 'blue'),
-      tag(STATUS_LABEL[status], status === 'completed' ? 'green' : status === 'available' ? 'gold' : status === 'exclusive' ? 'red' : 'grey'),
+      tag(STATUS_LABEL[status], status === 'completed' || status === 'bypassed' ? 'green' : status === 'available' ? 'gold' : status === 'exclusive' || status === 'invalidated' ? 'red' : 'grey'),
       tag(`${focus.days} days`, 'grey'),
       focus.cost ? tag(`${focus.cost} PP`, 'gold') : tag('No PP cost', 'grey'),
     );
@@ -410,7 +497,11 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     detailsHead.append(iconBox, headInfo);
 
     detailsBody.append(div('if-focus-details__desc', focus.description));
+    if (focus.branchName) detailsBody.append(div('if-hint', `Branch: ${focus.branchName}`));
     if (focus.history) detailsBody.append(div('if-focus-details__history', focus.history));
+    const invalidReason = state.focusInvalidReason(focus.id);
+    if (invalidReason) detailsBody.append(div('if-focus-details__history', invalidReason));
+    if (focus.requiresFlag) detailsBody.append(div('if-hint', `Requires political flag: ${focus.requiresFlag.replace(/_/g, ' ')}`));
 
     if ((focus.prerequisites ?? []).length > 0) {
       detailsBody.append(sectionLabel('Prerequisites'));
@@ -422,6 +513,20 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
         const row = button('', `if-prereq${met ? ' is-met' : ''}`, () => selectFocus(parent.id));
         const dot = span('if-prereq__dot');
         row.append(dot, span('', parent.name), span('if-prereq__state', met ? 'Completed' : 'Required'));
+        list.append(row);
+      }
+      detailsBody.append(list);
+    }
+
+    if ((focus.prerequisitesAny ?? []).length > 0) {
+      detailsBody.append(sectionLabel('Any one of these paths'));
+      const list = div('if-prereqlist');
+      for (const id of focus.prerequisitesAny ?? []) {
+        const parent = tree.focuses.find((entry) => entry.id === id);
+        if (!parent) continue;
+        const met = state.completedFocuses.has(id);
+        const row = button('', `if-prereq${met ? ' is-met' : ''}`, () => selectFocus(parent.id));
+        row.append(span('if-prereq__dot'), span('', parent.name), span('if-prereq__state', met ? 'Completed' : 'Optional path'));
         list.append(row);
       }
       detailsBody.append(list);
@@ -499,6 +604,13 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
       detailsFoot.append(startBtn);
       if (!check.ok) detailsFoot.append(div('if-hint', check.message));
       if (state.focusState(focus.id) === 'exclusive') detailsFoot.append(div('if-hint', `Blocked by ${state.focusBlockedBy(focus.id) ?? 'a mutually exclusive focus'}.`));
+      if (focus.bypassable && status === 'available') {
+        detailsFoot.append(button('Bypass focus', 'if-btn if-btn--sm if-btn--ghost if-btn--block', () => {
+          const result = state.bypassFocus(focus.id);
+          ctx.toast(result.message, result.ok ? 'good' : 'bad');
+          if (result.ok) ctx.rerender();
+        }));
+      }
     }
   }
 
@@ -539,11 +651,29 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     }
   }
 
-  // Place the camera once the element is in the document.
-  requestAnimationFrame(() => {
-    if (!ui.fitted) fit();
-    else applyTransform();
-  });
+  // Place the camera once the element is in the document. The details panel can change the
+  // canvas width after the first frame, so keep correcting an initial fit until layout settles
+  // or the player takes over. A saved camera is applied without being recalculated.
+  function settleCamera(): void {
+    const width = main.clientWidth;
+    const height = main.clientHeight;
+    if (!autoFit) {
+      applyTransform();
+      return;
+    }
+    if (width <= 0 || height <= 0) return;
+    if (world.style.transform && width === observedWidth && height === observedHeight) return;
+    fit();
+  }
+  const resizeObserver = new ResizeObserver(settleCamera);
+  resizeObserver.observe(main);
+  requestAnimationFrame(settleCamera);
+  window.setTimeout(settleCamera, 0);
+  window.setTimeout(settleCamera, 250);
+  window.setTimeout(() => {
+    autoFit = false;
+    resizeObserver.disconnect();
+  }, 3000);
   if (ui.selectedId) renderDetails();
 
   return { element: frame.element, refresh };

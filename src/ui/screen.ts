@@ -16,7 +16,8 @@ export type ScreenId =
   | 'military'
   | 'diplomacy'
   | 'intelligence'
-  | 'decisions';
+  | 'decisions'
+  | 'history';
 
 export interface MapBridge {
   /** Frames a country's provinces in the camera. */

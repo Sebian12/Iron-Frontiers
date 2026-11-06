@@ -25,9 +25,9 @@ export function mountPolitics(ctx: ScreenContext): Screen {
   const rulerInfo = div('if-ruler__info');
   const rulerName = document.createElement('div');
   rulerName.className = 'if-ruler__name';
-  rulerName.textContent = country.leader.name;
-  const rulerTitle = div('if-ruler__title', country.leader.title);
-  const ideologyTag = tag(ideologyName(state, country.ideology), 'gold');
+  rulerName.textContent = state.political.leaderName;
+  const rulerTitle = div('if-ruler__title', state.political.leaderTitle);
+  const ideologyTag = tag(ideologyName(state, state.political.ideology), 'gold');
   ideologyTag.style.marginBottom = '6px';
   const bio = div('if-ruler__bio', country.leader.biography);
   const traits = div('if-traitlist');
@@ -44,8 +44,8 @@ export function mountPolitics(ctx: ScreenContext): Screen {
   const govDetails = div('');
   govDetails.append(
     div('if-kv', span('if-kv__label', 'Ruling coalition'), span('if-kv__value', country.coalition ?? '—')),
-    div('if-kv', span('if-kv__label', 'Seats in government'), span('if-kv__value', `${Math.round((country.legitimacy ?? 0.7) * 100)}%`)),
-    meterBlock(country.legitimacy ?? 0.7, 'blue', 'Government legitimacy'),
+    div('if-kv', span('if-kv__label', 'Constitution'), span('if-kv__value', state.politicalSystem?.name ?? state.political.systemId)),
+    meterBlock(state.political.legitimacy, state.political.legitimacy < 0.4 ? 'red' : 'blue', state.politicalSystem?.legitimacyLabel ?? 'Government legitimacy'),
     div('', meterBlock(state.stability, state.stability < 0.4 ? 'red' : 'green', 'Stability')),
     div('', meterBlock(state.warSupport, 'gold', 'War support')),
   );
@@ -171,12 +171,168 @@ export function mountPolitics(ctx: ScreenContext): Screen {
   }
   decisions.body.append(decisionList);
 
+  // ---------------------------------------------------------------- political system and mechanic
+  const systemPanel = panel('Constitutional Order', state.politicalSystem?.icon ?? 'gov');
+  systemPanel.body.append(
+    div('if-pol-system__name', state.politicalSystem?.name ?? state.political.systemId),
+    div('if-muted', state.politicalSystem?.description ?? ''),
+    div('if-metricgrid',
+      div('', meterBlock(state.political.legitimacy, 'blue', state.politicalSystem?.legitimacyLabel ?? 'Legitimacy')),
+      div('', meterBlock(state.political.tension / 100, state.political.tension > 40 ? 'red' : 'gold', 'Political tension')),
+      div('', meterBlock(state.political.revolutionSupport / 100, state.political.revolutionSupport > 40 ? 'red' : 'grey', 'Revolutionary support')),
+      div('', meterBlock(state.political.governmentLoyalty / 100, 'green', 'Government loyalty')),
+    ),
+  );
+  const mechanic = state.politics.mechanic();
+  if (mechanic) {
+    const mechBox = div('if-mechanic');
+    const mechHead = div('if-mechanic__head');
+    mechHead.append(icon(mechanic.icon, 'if-ico'), span('if-mechanic__name', mechanic.name), tag(`${Math.round(state.political.mechanicValue)} / 100`, 'gold'));
+    mechBox.append(mechHead, div('if-muted', mechanic.description), meterBlock(state.political.mechanicValue / 100, 'gold', mechanic.valueLabel));
+    const actions = div('if-mechanic__actions');
+    for (const action of mechanic.actions) {
+      const btn = button(`${action.name} · ${action.cost} PP`, 'if-btn if-btn--sm', () => {
+        const result = state.useMechanicAction(action.id);
+        ctx.toast(result.message, result.ok ? 'good' : 'bad');
+        if (result.ok) ctx.rerender();
+      });
+      btn.disabled = state.politicalPower < action.cost;
+      withTip(btn, `<span class="if-tip__title">${action.name}</span>${action.description}<span class="if-tip__note">${action.cost} political power</span>`);
+      actions.append(btn);
+    }
+    mechBox.append(actions);
+    systemPanel.body.append(mechBox);
+  }
+
+  const revolution = state.revolutionStatus();
+  const revolutionBox = div('if-revolution');
+  revolutionBox.append(
+    div('if-sectionlabel', span('if-sectionlabel__text', 'Revolutionary Pressure')),
+    div('if-hint', `Organisation ${Math.round(state.political.revolutionOrganization)} / 100 · estimated strength ${revolution.strength}`),
+  );
+  const revolutionBtn = button('Proclaim Revolution', 'if-btn if-btn--danger if-btn--block', () => {
+    modal({
+      title: 'Proclaim the Revolution',
+      iconName: 'flame',
+      body: div('', `The revolutionary movement will attempt to seize power. Current strength: ${revolution.strength}. Success depends on support, organisation, stability and government loyalty. A failed rising will weaken the movement.`),
+      actions: [
+        { label: 'Not yet', className: 'if-btn--ghost' },
+        { label: 'Launch the rising', className: 'if-btn--danger', onClick: () => {
+          const result = state.launchRevolution();
+          ctx.toast(result.message, result.ok ? 'good' : 'bad');
+          ctx.rerender();
+        } },
+      ],
+    });
+  });
+  revolutionBtn.disabled = !revolution.ready;
+  if (!revolution.ready) withTip(revolutionBtn, `Requirements: ${revolution.missing.join(' · ')}`);
+  revolutionBox.append(revolutionBtn);
+  if (!revolution.ready) revolutionBox.append(div('if-hint', revolution.missing.join(' · ')));
+
+  const coupTargets = state.coupTargets();
+  if (coupTargets.length > 0) {
+    revolutionBox.append(div('if-sectionlabel', span('if-sectionlabel__text', 'Coup Risk')), div('if-hint', 'Groups with enough influence and a hostile agenda may attempt to seize power.'));
+    for (const group of coupTargets) {
+      const btn = button(`${group.name} · ${state.coupChance(group.name)}%`, 'if-btn if-btn--sm if-btn--danger', () => {
+        modal({
+          title: 'A Coup Attempt',
+          iconName: 'swords',
+          body: div('', `${group.leader} and ${group.name} are preparing to seize the government. Estimated success chance: ${state.coupChance(group.name)}%. Failure will damage the group and raise political tension.`),
+          actions: [
+            { label: 'Stand down', className: 'if-btn--ghost' },
+            { label: 'Proceed', className: 'if-btn--danger', onClick: () => {
+              const result = state.attemptCoup(group.name);
+              ctx.toast(result.message, result.ok ? 'good' : 'bad');
+              ctx.rerender();
+            } },
+          ],
+        });
+      });
+      revolutionBox.append(btn);
+    }
+  }
+  systemPanel.body.append(revolutionBox);
+
+  // ---------------------------------------------------------------- movements
+  const movements = panel('Movements & Influence', 'people', { subtitle: 'Popularity is public support; influence is actual power' });
+  const movementList = div('if-movements');
+  for (const group of [...state.political.groups].sort((a, b) => b.influence - a.influence)) {
+    const row = div(`if-movement${group.inGovernment ? ' is-ruling' : ''}`);
+    const head = div('if-movement__head');
+    head.append(
+      icon(content.ideologies[group.ideology]?.icon ?? 'ballot', 'if-ico'),
+      span('if-movement__name', group.name),
+      tag(group.inGovernment ? 'In government' : 'Opposition', group.inGovernment ? 'green' : 'grey'),
+    );
+    const meta = div('if-movement__meta', `${group.leader} · ${group.objective}`);
+    const bars = div('if-movement__bars');
+    bars.append(
+      div('if-movement__bar', span('', `Popularity ${pct(group.popularity)}`), meter(group.popularity, group.inGovernment ? 'gold' : 'blue')),
+      div('if-movement__bar', span('', `Influence ${Math.round(group.influence)} / 100`), meter(group.influence / 100, 'green')),
+    );
+    const actions = div('if-movement__actions');
+    const campaign = button('Campaign · 15 PP', 'if-btn if-btn--sm', () => {
+      const result = state.campaignGroup(group.name);
+      ctx.toast(result.message, result.ok ? 'good' : 'bad');
+      if (result.ok) ctx.rerender();
+    });
+    campaign.disabled = state.politicalPower < 15;
+    const suppress = button('Suppress · 20 PP', 'if-btn if-btn--sm if-btn--danger', () => {
+      const result = state.suppressGroup(group.name);
+      ctx.toast(result.message, result.ok ? 'good' : 'bad');
+      if (result.ok) ctx.rerender();
+    });
+    suppress.disabled = state.politicalPower < 20 || group.inGovernment;
+    actions.append(campaign, suppress);
+    row.append(head, meta, bars, actions);
+    movementList.append(row);
+  }
+  movements.body.append(movementList);
+
+  // ---------------------------------------------------------------- transitions
+  const transitions = panel('Constitutional Change', 'scroll', { subtitle: 'Requirements are checked against the living state' });
+  for (const transition of state.politicalTransitions()) {
+    const missing = state.transitionMissing(transition.id);
+    const card = div(`if-transition${missing.length ? ' is-locked' : ''}`);
+    const head = div('if-transition__head');
+    head.append(icon(transition.icon, 'if-ico'), span('if-transition__name', transition.name), tag(transition.kind, 'blue'));
+    const body = div('if-transition__body');
+    body.append(div('if-muted', transition.description));
+    if (transition.cost) body.append(div('if-hint', `${transition.cost} political power`));
+    if (missing.length) {
+      const reqs = div('if-transition__req');
+      for (const item of missing) reqs.append(div('is-missing', `✕ ${item}`));
+      body.append(reqs);
+    } else {
+      body.append(div('if-transition__ready', '✓ All requirements met'));
+    }
+    const btn = button(missing.length ? 'Requirements not met' : 'Enact Transition', 'if-btn if-btn--sm if-btn--gold', () => {
+      modal({
+        title: transition.name,
+        iconName: transition.icon,
+        body: div('', `${transition.description} This will replace the current constitution, change the political system and may cancel a focus whose path is closed. Completed focuses and political history are preserved.`),
+        actions: [
+          { label: 'Cancel', className: 'if-btn--ghost' },
+          { label: 'Enact', className: 'if-btn--gold', onClick: () => {
+            const result = state.executeTransition(transition.id);
+            ctx.toast(result.message, result.ok ? 'good' : 'bad');
+            if (result.ok) ctx.rerender();
+          } },
+        ],
+      });
+    });
+    btn.disabled = missing.length > 0;
+    card.append(head, body, btn);
+    transitions.body.append(card);
+  }
+
   const leftCol = div('if-col');
   leftCol.append(government.element, parties.element);
   const centerCol = div('if-col');
-  centerCol.append(advisors.element, modifiers.element);
+  centerCol.append(systemPanel.element, movements.element, advisors.element);
   const rightCol = div('if-col');
-  rightCol.append(decisions.element);
+  rightCol.append(transitions.element, modifiers.element, decisions.element);
   grid.append(leftCol, centerCol, rightCol);
 
   // ---------------------------------------------------------------- helpers
