@@ -5,25 +5,37 @@ import { MapRenderer } from './render/mapRenderer';
 async function start() {
   document.body.style.margin = '0';
   document.body.style.overflow = 'hidden';
-  document.body.style.background = '#101820';
+  // Sea color, so whatever part of the window the map does not cover looks like open ocean.
+  document.body.style.background = '#183454';
 
   const world = await loadWorld();
 
   const app = new Application();
-  await app.init({ resizeTo: window, background: '#101820', preference: 'webgl', antialias: false });
+  await app.init({ resizeTo: window, background: '#183454', preference: 'webgl', antialias: false });
   document.body.appendChild(app.canvas);
 
   const map = new MapRenderer(world);
   app.stage.addChild(map.view);
 
-  // Camera: pan and zoom by moving and scaling the map container.
-  const fit = Math.min(window.innerWidth / world.width, window.innerHeight / world.height);
+  // Camera: pan and zoom by moving and scaling the map container. It is clamped to the map bounds,
+  // so the map can never be dragged off screen: when it is larger than the window it always covers
+  // the window, when it is smaller it stays centered.
+  const fitScale = () => Math.min(window.innerWidth / world.width, window.innerHeight / world.height);
+
+  function clampCamera() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const w = world.width * map.view.scale.x;
+    const h = world.height * map.view.scale.y;
+    map.view.x = w <= vw ? (vw - w) / 2 : Math.min(0, Math.max(vw - w, map.view.x));
+    map.view.y = h <= vh ? (vh - h) / 2 : Math.min(0, Math.max(vh - h, map.view.y));
+  }
+
+  const fit = fitScale();
   map.view.scale.set(fit);
   map.setZoom(fit);
-  map.view.position.set(
-    (window.innerWidth - world.width * fit) / 2,
-    (window.innerHeight - world.height * fit) / 2,
-  );
+  clampCamera();
+  window.addEventListener('resize', clampCamera);
 
   // Info panel for the selected province.
   const info = document.createElement('div');
@@ -40,7 +52,9 @@ async function start() {
     (e) => {
       e.preventDefault();
       const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      const newScale = Math.min(Math.max(map.view.scale.x * factor, fit * 0.8), fit * 40);
+      // Zooming out stops at the fitted view, so the map always covers the window and no empty
+      // margin can appear around it.
+      const newScale = Math.min(Math.max(map.view.scale.x * factor, fitScale()), fitScale() * 40);
       const k = newScale / map.view.scale.x;
       map.view.position.set(
         e.clientX - (e.clientX - map.view.x) * k,
@@ -48,6 +62,7 @@ async function start() {
       );
       map.view.scale.set(newScale);
       map.setZoom(newScale);
+      clampCamera();
     },
     { passive: false },
   );
@@ -70,6 +85,7 @@ async function start() {
     moved += Math.abs(dx) + Math.abs(dy);
     map.view.x += dx;
     map.view.y += dy;
+    clampCamera();
     lastX = e.clientX;
     lastY = e.clientY;
   });

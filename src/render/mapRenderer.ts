@@ -61,19 +61,24 @@ void main() {
   ivec2 base = ivec2(floor(p));
   vec2 f = p - vec2(base);
 
-  // cubic B-spline weights of the 4 texels along each axis
-  vec4 wx = vec4(
+  // Weights of the 4 texels along each axis. At low zoom a cubic B-spline turns the blocky raster
+  // into rounded borders, but magnified it would smear every border across tens of screen pixels
+  // and lines would break. So the weights fade to plain bilinear (exact texel edges) as we zoom in.
+  float sharp = smoothstep(2.5, 7.0, uZoom);
+  vec4 wxB = vec4(
     (1.0 - f.x) * (1.0 - f.x) * (1.0 - f.x),
     3.0 * f.x * f.x * f.x - 6.0 * f.x * f.x + 4.0,
     -3.0 * f.x * f.x * f.x + 3.0 * f.x * f.x + 3.0 * f.x + 1.0,
     f.x * f.x * f.x
   ) / 6.0;
-  vec4 wy = vec4(
+  vec4 wyB = vec4(
     (1.0 - f.y) * (1.0 - f.y) * (1.0 - f.y),
     3.0 * f.y * f.y * f.y - 6.0 * f.y * f.y + 4.0,
     -3.0 * f.y * f.y * f.y + 3.0 * f.y * f.y + 3.0 * f.y + 1.0,
     f.y * f.y * f.y
   ) / 6.0;
+  vec4 wx = mix(wxB, vec4(0.0, 1.0 - f.x, f.x, 0.0), sharp);
+  vec4 wy = mix(wyB, vec4(0.0, 1.0 - f.y, f.y, 0.0), sharp);
 
   int ids16[16];
   float w16[16];
@@ -121,13 +126,16 @@ void main() {
   vec3 col = texelFetch(uPalette, ivec2(bestId & 255, bestId >> 8), 0).rgb;
   if (uSelected >= 0.0 && bestId == int(uSelected + 0.5)) { col = mix(col, vec3(1.0), 0.4); }
 
-  // distance (in screen pixels) from the border between the two best candidates
-  float dist = margin / max(fwidth(margin), 0.00001);
+  // Distance (in screen pixels) from the border between the two best candidates. The gradient
+  // length is used instead of fwidth(): fwidth is an L1 norm, so borders at 45 degrees come out up
+  // to 1.4x thinner and break into dots once the line gets thin.
+  float grad = length(vec2(dFdx(margin), dFdy(margin)));
+  float dist = margin / max(grad, 1e-6);
   float lineWidth = 0.0;
   float lineAlpha = 0.0;
   vec3 lineColor = vec3(0.0);
   if (!same) {
-    float stateFade = smoothstep(0.2, 0.5, uZoom);
+    float stateFade = smoothstep(0.35, 0.9, uZoom);
     float provinceFade = smoothstep(0.6, 1.4, uZoom);
     bool sea1 = ownerOf(bestId) == 0;
     bool sea2 = ownerOf(secondId) == 0;
@@ -152,11 +160,14 @@ void main() {
       lineWidth = 1.5;
       lineAlpha = 0.7 * stateFade;
     } else {
-      lineWidth = 0.9;
-      lineAlpha = 0.4 * provinceFade;
+      lineWidth = 1.0;
+      lineAlpha = 0.45 * provinceFade;
     }
   }
-  float coverage = 1.0 - smoothstep(lineWidth * 0.5 - 0.5, lineWidth * 0.5 + 0.5, dist);
+  // A thin line keeps a full pixel wide anti-aliasing ramp and gives up alpha instead of width, so
+  // a border that fades in with zoom stays continuous instead of turning into a dotted line.
+  float halfWidth = max(lineWidth, 1.0) * 0.5;
+  float coverage = (1.0 - smoothstep(halfWidth - 0.5, halfWidth + 0.5, dist)) * min(1.0, lineWidth);
   col = mix(col, lineColor, coverage * lineAlpha);
 
   finalColor = vec4(col, 1.0);

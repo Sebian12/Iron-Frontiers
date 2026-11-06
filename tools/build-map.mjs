@@ -34,6 +34,7 @@ const KM2_PER_EQUATOR_PIXEL = (40075 / W) ** 2;
 const targetKm2 = (countryKm2) => Math.min(80000, 8000 + 14 * Math.sqrt(countryKm2));
 const STATE_FACTOR = 2.0; // a state is about this many "base targets" big (states group several provinces)
 const PROVINCE_FACTOR = 0.42; // a province is about this many "base targets" big
+const PROVINCE_MIN_KM2 = 9000; // floor, so small countries are not shredded into tiny provinces
 const MERGE_BELOW = 0.5; // states smaller than this fraction of their target are merged into a neighbor
 const SPLIT_ABOVE = 1.9; // states larger than this multiple of their target are split
 const PROVINCE_SPLIT_ABOVE = 1.35; // a state bigger than this multiple of the province target gets several provinces
@@ -416,7 +417,7 @@ recomputeStats(provinces);
 const adminArea = new Map();
 for (const p of provinces) adminArea.set(p.admin, (adminArea.get(p.admin) ?? 0) + p.area);
 const targetOf = (p) => STATE_FACTOR * targetKm2(adminArea.get(p.admin));
-const provinceTargetOf = (p) => PROVINCE_FACTOR * targetKm2(adminArea.get(p.admin));
+const provinceTargetOf = (p) => Math.max(PROVINCE_MIN_KM2, PROVINCE_FACTOR * targetKm2(adminArea.get(p.admin)));
 
 // 5) merge small provinces into the same-owner neighbor they touch most
 function contactCounts(n) {

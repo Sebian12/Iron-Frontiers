@@ -12,10 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Map builder downloads and debug renders (regenerate with npm run build:map)
+tools/cache
+tools/out
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
+.freebuff/
 .DS_Store
 *.suo
 *.ntvs*
