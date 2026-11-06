@@ -56,15 +56,37 @@ int stateOf(int id) {
   return int(m.g * 255.0 + 0.5) + int(m.b * 255.0 + 0.5) * 256;
 }
 
+// Distance (in texels) from the pixel to the nearest edge of the texel that contains it, on the
+// side that touches a province with a different id. Coordinates: p = vUV * uSize - 0.5, so texel
+// centres sit on whole numbers and the texel edges at +/-0.5; the colour pick with bilinear weights
+// flips exactly on those edges, which is why the line has to be measured in this frame too.
+float rasterBorderDistance(ivec2 base, vec2 f) {
+  vec2 u = fract(f + 0.5);
+  ivec2 own = base + ivec2(step(0.5, f));
+  int ownId = idAt(own);
+  float d = 8.0;
+  if (idAt(own + ivec2(-1, 0)) != ownId) { d = min(d, u.x); }
+  if (idAt(own + ivec2(1, 0)) != ownId) { d = min(d, 1.0 - u.x); }
+  if (idAt(own + ivec2(0, -1)) != ownId) { d = min(d, u.y); }
+  if (idAt(own + ivec2(0, 1)) != ownId) { d = min(d, 1.0 - u.y); }
+  if (idAt(own + ivec2(-1, -1)) != ownId) { d = min(d, length(vec2(u.x, u.y))); }
+  if (idAt(own + ivec2(1, -1)) != ownId) { d = min(d, length(vec2(1.0 - u.x, u.y))); }
+  if (idAt(own + ivec2(-1, 1)) != ownId) { d = min(d, length(vec2(u.x, 1.0 - u.y))); }
+  if (idAt(own + ivec2(1, 1)) != ownId) { d = min(d, length(vec2(1.0 - u.x, 1.0 - u.y))); }
+  return d;
+}
+
+
 void main() {
   vec2 p = vUV * uSize - 0.5;
   ivec2 base = ivec2(floor(p));
   vec2 f = p - vec2(base);
 
-  // Weights of the 4 texels along each axis. At low zoom a cubic B-spline turns the blocky raster
-  // into rounded borders, but magnified it would smear every border across tens of screen pixels
-  // and lines would break. So the weights fade to plain bilinear (exact texel edges) as we zoom in.
-  float sharp = smoothstep(2.5, 7.0, uZoom);
+  // Weights of the 4 texels along each axis. A cubic B-spline is a good reconstruction filter while
+  // the map is being shrunk, but once a texel is a screen pixel or more there is nothing to filter:
+  // the kernel would smear every border over several pixels and lines would look broken. So the
+  // weights switch to plain bilinear (exact texel edges) around 1:1.
+  float sharp = smoothstep(0.9, 1.15, uZoom);
   vec4 wxB = vec4(
     (1.0 - f.x) * (1.0 - f.x) * (1.0 - f.x),
     3.0 * f.x * f.x * f.x - 6.0 * f.x * f.x + 4.0,
@@ -131,6 +153,9 @@ void main() {
   // to 1.4x thinner and break into dots once the line gets thin.
   float grad = length(vec2(dFdx(margin), dFdy(margin)));
   float dist = margin / max(grad, 1e-6);
+  // Magnified, the smoothed field is too coarse to follow thin provinces, so the line comes from
+  // the texel grid itself: exact edges, closed junctions, and the same edges the colour flips on.
+  dist = mix(dist, rasterBorderDistance(base, f) * uZoom, sharp);
   float lineWidth = 0.0;
   float lineAlpha = 0.0;
   vec3 lineColor = vec3(0.0);

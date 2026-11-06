@@ -1,12 +1,14 @@
 import { Application } from 'pixi.js';
 import { loadWorld } from './data/loadWorld';
 import { MapRenderer } from './render/mapRenderer';
+import { createStartMenu, showLoadingScreen } from './ui/menu';
 
 async function start() {
   document.body.style.margin = '0';
   document.body.style.overflow = 'hidden';
   // Sea color, so whatever part of the window the map does not cover looks like open ocean.
   document.body.style.background = '#183454';
+  const finishLoading = showLoadingScreen();
 
   const world = await loadWorld();
 
@@ -37,12 +39,83 @@ async function start() {
   clampCamera();
   window.addEventListener('resize', clampCamera);
 
-  // Info panel for the selected province.
+  // Info panel for the selected province; it only appears once the player picked a country.
   const info = document.createElement('div');
   info.style.cssText =
-    'position:fixed;left:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;pointer-events:none';
+    'position:fixed;left:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;pointer-events:none;display:none';
   info.textContent = 'Click a province. Mouse wheel = zoom, drag = pan.';
   document.body.appendChild(info);
+
+  // Small badge with the country the player controls.
+  const badge = document.createElement('div');
+  badge.style.cssText =
+    'position:fixed;right:12px;top:12px;padding:8px 12px;background:#000a;color:#fff;font:14px sans-serif;border-radius:6px;display:none;align-items:center;gap:8px;pointer-events:none';
+  const badgeSwatch = document.createElement('span');
+  badgeSwatch.style.cssText = 'width:12px;height:12px;border:1px solid #0008;box-shadow:0 0 0 1px #ffffff55';
+  const badgeName = document.createElement('span');
+  badge.append(badgeSwatch, badgeName);
+  document.body.appendChild(badge);
+
+  /**
+   * Frames the player's country: centred on its outline in the free part of the window, zoomed so it
+   * fills a good part of it. `insetLeft` is the width of the menu panel covering the left side.
+   */
+  function focusCountry(countryId: number, insetLeft = 0) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const province of world.provinces) {
+      if (province.owner !== countryId) continue;
+      if (province.x < minX) minX = province.x;
+      if (province.x > maxX) maxX = province.x;
+      if (province.y < minY) minY = province.y;
+      if (province.y > maxY) maxY = province.y;
+    }
+    if (!Number.isFinite(minX)) return;
+
+    // Leave some room around the country, but never zoom out past the fitted view or in past 2 px/texel.
+    const viewWidth = Math.max(window.innerWidth - insetLeft, 1);
+    const centerX = insetLeft + viewWidth / 2;
+    const padding = 1.8;
+    const scale = Math.min(
+      Math.max(
+        Math.min(
+          viewWidth / Math.max(maxX - minX, 1) / padding,
+          window.innerHeight / Math.max(maxY - minY, 1) / padding,
+        ),
+        fitScale(),
+      ),
+      2,
+    );
+    map.view.scale.set(scale);
+    map.view.position.set(
+      centerX - ((minX + maxX) / 2) * scale,
+      window.innerHeight / 2 - ((minY + maxY) / 2) * scale,
+    );
+    map.setZoom(scale);
+    clampCamera();
+  }
+
+  const menu = createStartMenu(world, {
+    // Picking a country zooms the map to it; the panel on the left stays out of the frame.
+    onSelect: (countryId) => {
+      const panel = document.querySelector('.if-pick');
+      focusCountry(countryId, panel instanceof HTMLElement ? panel.getBoundingClientRect().width : 0);
+    },
+    onStart: (countryId) => {
+      const country = world.countries[countryId];
+      badgeName.textContent = `Playing as: ${country.name}`;
+      badgeSwatch.style.background = `rgb(${country.color.join(', ')})`;
+      badge.style.display = 'flex';
+      info.style.display = '';
+      focusCountry(countryId);
+    },
+  });
+
+  // Draw the map once before the loading cover goes away, so the menu sits on a finished picture.
+  app.render();
+  finishLoading();
 
   const canvas = app.canvas as HTMLCanvasElement;
 
@@ -95,6 +168,8 @@ async function start() {
     if (moved > 4) return;
     const local = map.view.toLocal({ x: e.clientX, y: e.clientY });
     const id = map.provinceAt(local.x, local.y);
+    // While the menu is open a click picks a country instead of a province.
+    if (menu.handleMapClick(id > 0 ? world.provinces[id].owner : 0)) return;
     map.setSelected(id);
     if (id <= 0) {
       info.textContent = id === 0 ? 'Sea' : 'Outside the map';
@@ -105,10 +180,10 @@ async function start() {
     const overlord = owner.overlord !== null ? ` (subject of ${world.countries[owner.overlord].name})` : '';
     const state = world.states[p.state];
     if (owner.id === 0) {
-      info.textContent = `${state.name} (sea) | sea province #${id} | neighbors: ${p.neighbors.length}`;
+      info.textContent = `${state.name} (sea) | sea province #${id} | neighbours: ${p.neighbors.length}`;
       return;
     }
-    info.textContent = `${state.name} | province #${id} | owner: ${owner.name}${overlord} | neighbors: ${p.neighbors.length}`;
+    info.textContent = `${state.name} | province #${id} | owner: ${owner.name}${overlord} | neighbours: ${p.neighbors.length}`;
   });
 }
 
