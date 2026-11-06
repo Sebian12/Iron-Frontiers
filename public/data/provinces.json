@@ -11,217 +11,217 @@
     {
       "id": 1,
       "name": "Argentina",
-      "color": [ 198, 104, 57 ],
+      "color": [ 145, 157, 236 ],
       "overlord": null
     },
     {
       "id": 2,
       "name": "Uruguay",
-      "color": [ 198, 57, 198 ],
+      "color": [ 171, 190, 152 ],
       "overlord": null
     },
     {
       "id": 3,
       "name": "Dutch East Indies",
-      "color": [ 202, 171, 109 ],
+      "color": [ 252, 57, 50 ],
       "overlord": 14
     },
     {
       "id": 4,
       "name": "United Kingdom",
-      "color": [ 226, 120, 150 ],
+      "color": [ 201, 56, 93 ],
       "overlord": null
     },
     {
       "id": 5,
       "name": "Chile",
-      "color": [ 57, 198, 57 ],
+      "color": [ 155, 101, 107 ],
       "overlord": null
     },
     {
       "id": 6,
       "name": "Bolivia",
-      "color": [ 104, 57, 198 ],
+      "color": [ 204, 166, 108 ],
       "overlord": null
     },
     {
       "id": 7,
       "name": "Peru",
-      "color": [ 173, 31, 31 ],
+      "color": [ 196, 189, 204 ],
       "overlord": null
     },
     {
       "id": 8,
       "name": "British Raj",
-      "color": [ 236, 167, 187 ],
+      "color": [ 226, 135, 40 ],
       "overlord": 4
     },
     {
       "id": 9,
       "name": "Xinjiang",
-      "color": [ 57, 198, 128 ],
+      "color": [ 71, 190, 152 ],
       "overlord": null
     },
     {
       "id": 10,
       "name": "Tibet",
-      "color": [ 57, 57, 198 ],
+      "color": [ 80, 100, 45 ],
       "overlord": null
     },
     {
       "id": 11,
       "name": "France",
-      "color": [ 70, 120, 190 ],
+      "color": [ 57, 113, 228 ],
       "overlord": null
     },
     {
       "id": 12,
       "name": "Ethiopia",
-      "color": [ 31, 31, 173 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 13,
       "name": "Italy",
-      "color": [ 95, 150, 70 ],
+      "color": [ 67, 127, 63 ],
       "overlord": null
     },
     {
       "id": 14,
       "name": "Netherlands",
-      "color": [ 173, 126, 31 ],
+      "color": [ 203, 138, 74 ],
       "overlord": null
     },
     {
       "id": 15,
       "name": "Japan",
-      "color": [ 235, 205, 90 ],
+      "color": [ 255, 201, 179 ],
       "overlord": null
     },
     {
       "id": 16,
       "name": "Spain",
-      "color": [ 57, 198, 81 ],
+      "color": [ 242, 205, 94 ],
       "overlord": null
     },
     {
       "id": 17,
       "name": "Costa Rica",
-      "color": [ 173, 31, 31 ],
+      "color": [ 152, 128, 43 ],
       "overlord": null
     },
     {
       "id": 18,
       "name": "Nicaragua",
-      "color": [ 126, 173, 31 ],
+      "color": [ 146, 179, 191 ],
       "overlord": null
     },
     {
       "id": 19,
       "name": "Belgium",
-      "color": [ 57, 198, 57 ],
+      "color": [ 193, 171, 8 ],
       "overlord": null
     },
     {
       "id": 20,
       "name": "Bhutan",
-      "color": [ 166, 206, 126 ],
+      "color": [ 172, 122, 88 ],
       "overlord": null
     },
     {
       "id": 21,
       "name": "Soviet Union",
-      "color": [ 190, 45, 45 ],
+      "color": [ 125, 13, 24 ],
       "overlord": null
     },
     {
       "id": 22,
       "name": "Poland",
-      "color": [ 200, 90, 110 ],
+      "color": [ 214, 102, 139 ],
       "overlord": null
     },
     {
       "id": 23,
       "name": "South Africa",
-      "color": [ 31, 173, 54 ],
+      "color": [ 195, 107, 160 ],
       "overlord": null
     },
     {
       "id": 24,
       "name": "Oman",
-      "color": [ 78, 31, 173 ],
+      "color": [ 155, 101, 107 ],
       "overlord": null
     },
     {
       "id": 25,
       "name": "Lithuania",
-      "color": [ 126, 31, 173 ],
+      "color": [ 219, 219, 119 ],
       "overlord": null
     },
     {
       "id": 26,
       "name": "Brazil",
-      "color": [ 102, 173, 31 ],
+      "color": [ 76, 145, 63 ],
       "overlord": null
     },
     {
       "id": 27,
       "name": "Mongolia",
-      "color": [ 57, 81, 198 ],
+      "color": [ 102, 96, 87 ],
       "overlord": null
     },
     {
       "id": 28,
       "name": "Mengjiang",
-      "color": [ 205, 180, 95 ],
+      "color": [ 185, 255, 152 ],
       "overlord": 15
     },
     {
       "id": 29,
       "name": "Xibei San Ma",
-      "color": [ 173, 31, 78 ],
+      "color": [ 105, 90, 132 ],
       "overlord": null
     },
     {
       "id": 30,
       "name": "Czechoslovakia",
-      "color": [ 31, 31, 173 ],
+      "color": [ 54, 167, 156 ],
       "overlord": null
     },
     {
       "id": 31,
       "name": "Germany",
-      "color": [ 105, 105, 105 ],
+      "color": [ 102, 96, 87 ],
       "overlord": null
     },
     {
       "id": 32,
       "name": "Estonia",
-      "color": [ 198, 57, 198 ],
+      "color": [ 50, 135, 175 ],
       "overlord": null
     },
     {
       "id": 33,
       "name": "Latvia",
-      "color": [ 128, 198, 57 ],
+      "color": [ 75, 77, 186 ],
       "overlord": null
     },
     {
       "id": 34,
       "name": "Norway",
-      "color": [ 198, 57, 198 ],
+      "color": [ 111, 71, 71 ],
       "overlord": null
     },
     {
       "id": 35,
       "name": "Sweden",
-      "color": [ 198, 81, 57 ],
+      "color": [ 36, 132, 247 ],
       "overlord": null
     },
     {
       "id": 36,
       "name": "Finland",
-      "color": [ 128, 198, 57 ],
+      "color": [ 205, 212, 228 ],
       "overlord": null
     },
     {
@@ -233,265 +233,265 @@
     {
       "id": 38,
       "name": "Luxembourg",
-      "color": [ 173, 31, 31 ],
+      "color": [ 65, 175, 179 ],
       "overlord": null
     },
     {
       "id": 39,
       "name": "Yugoslavia",
-      "color": [ 173, 54, 31 ],
+      "color": [ 72, 73, 126 ],
       "overlord": null
     },
     {
       "id": 40,
       "name": "Albania",
-      "color": [ 104, 198, 57 ],
+      "color": [ 149, 45, 102 ],
       "overlord": null
     },
     {
       "id": 41,
       "name": "Turkey",
-      "color": [ 31, 173, 150 ],
+      "color": [ 171, 190, 152 ],
       "overlord": null
     },
     {
       "id": 42,
       "name": "Yunnan",
-      "color": [ 173, 31, 54 ],
+      "color": [ 114, 148, 80 ],
       "overlord": null
     },
     {
       "id": 43,
       "name": "Denmark",
-      "color": [ 57, 198, 57 ],
+      "color": [ 153, 116, 93 ],
       "overlord": null
     },
     {
       "id": 44,
       "name": "Romania",
-      "color": [ 78, 173, 31 ],
+      "color": [ 215, 196, 72 ],
       "overlord": null
     },
     {
       "id": 45,
       "name": "Hungary",
-      "color": [ 126, 179, 206 ],
+      "color": [ 249, 126, 98 ],
       "overlord": null
     },
     {
       "id": 46,
       "name": "Ireland",
-      "color": [ 151, 198, 57 ],
+      "color": [ 80, 159, 90 ],
       "overlord": null
     },
     {
       "id": 47,
       "name": "Greece",
-      "color": [ 198, 57, 198 ],
+      "color": [ 93, 181, 227 ],
       "overlord": null
     },
     {
       "id": 48,
       "name": "Liberia",
-      "color": [ 31, 173, 31 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 49,
       "name": "Austria",
-      "color": [ 198, 57, 151 ],
+      "color": [ 194, 198, 215 ],
       "overlord": null
     },
     {
       "id": 50,
       "name": "Iraq",
-      "color": [ 174, 57, 198 ],
+      "color": [ 178, 114, 99 ],
       "overlord": null
     },
     {
       "id": 51,
       "name": "Switzerland",
-      "color": [ 173, 54, 31 ],
+      "color": [ 224, 5, 5 ],
       "overlord": null
     },
     {
       "id": 52,
       "name": "Iran",
-      "color": [ 151, 198, 57 ],
+      "color": [ 71, 113, 97 ],
       "overlord": null
     },
     {
       "id": 53,
       "name": "Portugal",
-      "color": [ 150, 31, 173 ],
+      "color": [ 39, 116, 70 ],
       "overlord": null
     },
     {
       "id": 54,
       "name": "Saudi Arabia",
-      "color": [ 104, 198, 57 ],
+      "color": [ 171, 190, 152 ],
       "overlord": null
     },
     {
       "id": 55,
       "name": "Bulgaria",
-      "color": [ 206, 179, 126 ],
+      "color": [ 51, 155, 0 ],
       "overlord": null
     },
     {
       "id": 56,
       "name": "Siam",
-      "color": [ 54, 173, 31 ],
+      "color": [ 171, 190, 152 ],
       "overlord": null
     },
     {
       "id": 57,
       "name": "Haiti",
-      "color": [ 198, 57, 198 ],
+      "color": [ 174, 113, 113 ],
       "overlord": null
     },
     {
       "id": 58,
       "name": "Dominican Republic",
-      "color": [ 198, 174, 57 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 59,
       "name": "El Salvador",
-      "color": [ 198, 57, 198 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 60,
       "name": "Guatemala",
-      "color": [ 57, 198, 174 ],
+      "color": [ 72, 49, 112 ],
       "overlord": null
     },
     {
       "id": 61,
       "name": "Afghanistan",
-      "color": [ 57, 104, 198 ],
+      "color": [ 64, 160, 167 ],
       "overlord": null
     },
     {
       "id": 62,
       "name": "United States",
-      "color": [ 60, 165, 190 ],
+      "color": [ 20, 133, 237 ],
       "overlord": null
     },
     {
       "id": 63,
       "name": "Cuba",
-      "color": [ 198, 198, 57 ],
+      "color": [ 140, 65, 166 ],
       "overlord": null
     },
     {
       "id": 64,
       "name": "Honduras",
-      "color": [ 198, 57, 57 ],
+      "color": [ 128, 145, 65 ],
       "overlord": null
     },
     {
       "id": 65,
       "name": "Ecuador",
-      "color": [ 81, 198, 57 ],
+      "color": [ 249, 146, 98 ],
       "overlord": null
     },
     {
       "id": 66,
       "name": "Colombia",
-      "color": [ 198, 57, 198 ],
+      "color": [ 222, 187, 91 ],
       "overlord": null
     },
     {
       "id": 67,
       "name": "Paraguay",
-      "color": [ 31, 150, 173 ],
+      "color": [ 57, 113, 228 ],
       "overlord": null
     },
     {
       "id": 68,
       "name": "Manchukuo",
-      "color": [ 243, 226, 150 ],
+      "color": [ 255, 120, 71 ],
       "overlord": 15
     },
     {
       "id": 69,
       "name": "Nepal",
-      "color": [ 206, 152, 126 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 70,
       "name": "Guangxi",
-      "color": [ 174, 57, 198 ],
+      "color": [ 71, 113, 97 ],
       "overlord": null
     },
     {
       "id": 71,
       "name": "Canada",
-      "color": [ 174, 198, 57 ],
+      "color": [ 233, 59, 59 ],
       "overlord": null
     },
     {
       "id": 72,
       "name": "Mexico",
-      "color": [ 198, 198, 57 ],
+      "color": [ 104, 152, 83 ],
       "overlord": null
     },
     {
       "id": 73,
       "name": "Panama",
-      "color": [ 57, 198, 104 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 74,
       "name": "Venezuela",
-      "color": [ 126, 206, 193 ],
+      "color": [ 171, 190, 152 ],
       "overlord": null
     },
     {
       "id": 75,
       "name": "Australia",
-      "color": [ 57, 198, 57 ],
+      "color": [ 57, 143, 97 ],
       "overlord": null
     },
     {
       "id": 76,
       "name": "Egypt",
-      "color": [ 236, 167, 187 ],
+      "color": [ 230, 230, 70 ],
       "overlord": 4
     },
     {
       "id": 77,
       "name": "Yemen",
-      "color": [ 128, 57, 198 ],
+      "color": [ 155, 101, 107 ],
       "overlord": null
     },
     {
       "id": 78,
       "name": "China",
-      "color": [ 95, 140, 105 ],
+      "color": [ 40, 40, 140 ],
       "overlord": null
     },
     {
       "id": 79,
       "name": "New Zealand",
-      "color": [ 173, 173, 31 ],
+      "color": [ 152, 130, 191 ],
       "overlord": null
     },
     {
       "id": 80,
       "name": "Philippines",
-      "color": [ 128, 197, 213 ],
+      "color": [ 0, 40, 195 ],
       "overlord": 62
     },
     {
       "id": 81,
       "name": "Iceland",
-      "color": [ 150, 173, 31 ],
+      "color": [ 100, 125, 175 ],
       "overlord": null
     },
     {
@@ -503,13 +503,13 @@
     {
       "id": 83,
       "name": "Shanxi",
-      "color": [ 173, 31, 150 ],
+      "color": [ 82, 2, 15 ],
       "overlord": null
     },
     {
       "id": 84,
       "name": "Communist China",
-      "color": [ 31, 102, 173 ],
+      "color": [ 245, 12, 55 ],
       "overlord": null
     }
   ],
