@@ -136,6 +136,8 @@ export function mountMilitary(ctx: ScreenContext): Screen {
       return;
     }
     const template = divisionTemplate(division.templateId) ?? DIVISION_TEMPLATES[0];
+    const province = state.divisionProvince(division);
+    const terrain = state.divisionTerrain(division);
     const head = div('if-focus-details__head');
     const iconBox = div('if-tech-detailicon');
     iconBox.innerHTML = icon(TYPE_ICON[division.type] ?? 'helmet', 'if-ico').outerHTML;
@@ -144,7 +146,7 @@ export function mountMilitary(ctx: ScreenContext): Screen {
     title.className = 'if-focus-details__title';
     title.textContent = division.name;
     const meta = div('if-focus-details__meta');
-    meta.append(tag(division.template, 'blue'), tag(division.type, 'grey'), tag(`Experience ${pct(division.experience)}`, division.experience > 0.25 ? 'green' : 'gold'));
+    meta.append(tag(division.template, 'blue'), tag(division.type, 'grey'), tag(terrain.name, 'gold'), tag(`Experience ${pct(division.experience)}`, division.experience > 0.25 ? 'green' : 'gold'));
     info.append(title, meta);
     head.append(iconBox, info);
     unitHost.append(head);
@@ -157,8 +159,8 @@ export function mountMilitary(ctx: ScreenContext): Screen {
     const stats = div('if-unitstats');
     stats.style.marginTop = '10px';
     for (const [value, label] of [
-      [String(template.attack), 'Soft attack'],
-      [String(template.defense), 'Defence'],
+      [String(state.divisionAttack(division, template.attack)), 'Soft attack'],
+      [String(state.divisionDefence(division, template.defense)), 'Defence'],
       [String(template.breakthrough), 'Breakthrough'],
       [String(template.speed), 'Speed km/h'],
     ]) {
@@ -171,7 +173,8 @@ export function mountMilitary(ctx: ScreenContext): Screen {
     unitHost.append(sectionLabel('Formation'));
     unitHost.append(
       div('if-kv', span('if-kv__label', 'Commander'), span('if-kv__value', state.commanderName(division.commander))),
-      div('if-kv', span('if-kv__label', 'Location'), span('if-kv__value', division.location)),
+      div('if-kv', span('if-kv__label', 'Location'), span('if-kv__value', province ? `${province.name} · ${terrain.name}` : division.location)),
+      div('if-kv', span('if-kv__label', 'Terrain supply'), span(`if-kv__value ${state.divisionSupply(division) >= 0 ? 'if-num--pos' : 'if-num--neg'}`, `${state.divisionSupply(division) > 0 ? '+' : ''}${state.divisionSupply(division)}%`)),
       div('if-kv', span('if-kv__label', 'Manpower'), span('if-kv__value', fmt(template.manpower))),
     );
     const needs = div('if-needs');
@@ -196,7 +199,10 @@ export function mountMilitary(ctx: ScreenContext): Screen {
     });
     reinforce.disabled = division.strength >= 1;
     withTip(reinforce, 'Costs 2,000 manpower and 200 infantry equipment. Restores 10% strength.');
-    actions.append(reinforce, button(location('Show in map'), 'if-btn if-btn--sm if-btn--ghost', () => ctx.map.focusCountry(state.countryId)));
+    actions.append(reinforce, button('Show in map', 'if-btn if-btn--sm if-btn--ghost', () => {
+      if (province) ctx.map.focusProvince(province.id);
+      else ctx.map.focusCountry(state.countryId);
+    }));
     unitHost.append(actions);
 
     strengthRefs = {
@@ -204,10 +210,6 @@ export function mountMilitary(ctx: ScreenContext): Screen {
       fill: unitHost.querySelector<HTMLElement>('.if-meter__fill') as HTMLElement,
       expFill: unitHost.querySelectorAll<HTMLElement>('.if-meter__fill')[1] as HTMLElement,
     };
-  }
-
-  function location(text: string): string {
-    return text;
   }
 
   function renderRecruit(): void {

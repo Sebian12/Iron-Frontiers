@@ -60,10 +60,14 @@ export function mountDecisions(ctx: ScreenContext): Screen {
   function cardFor(decision: DecisionDef): HTMLElement {
     const ready = state.decisionReady(decision);
     const cooldown = state.decisionCooldown(decision);
+    const missing = state.requirementChecks(decision.requirements).filter((check) => !check.met);
+    const ppShort = Math.max(0, decision.cost - state.politicalPower);
+    const status = cooldown > 0 ? `${cooldown}d cooldown` : missing.length > 0 ? 'Requirements unmet' : ppShort > 0 ? `${ppShort} PP short` : 'Ready';
+    const statusTone = cooldown > 0 ? 'grey' : missing.length > 0 || ppShort > 0 ? 'red' : 'green';
     const card = div(`if-decision${selected?.id === decision.id ? ' is-selected' : ''}`);
     const head = div('if-decision__head');
     head.append(icon(decision.icon, 'if-ico'), span('if-decision__name', decision.name), tag(CATEGORY_LABEL[decision.category], 'blue'));
-    head.append(tag(cooldown > 0 ? `${cooldown}d cooldown` : ready ? 'Ready' : 'Blocked', cooldown > 0 ? 'grey' : ready ? 'green' : 'red'));
+    head.append(tag(status, statusTone));
     const body = div('if-decision__body');
     body.append(div('', decision.description.length > 150 ? `${decision.description.slice(0, 147)}…` : decision.description));
     if (decision.requirements.length > 0) {
@@ -78,14 +82,15 @@ export function mountDecisions(ctx: ScreenContext): Screen {
     cost.append(icon('coin', 'if-ico'), document.createTextNode(`${decision.cost}`));
     const enact = button('Enact', 'if-btn if-btn--sm if-btn--gold', () => {
       const result = state.takeDecision(decision.id);
-      ctx.toast(result.message, result.ok ? 'good' : 'bad');
+      ctx.toast(result.ok ? `${decision.name}: ${decision.effects.map((effect) => effect.text).join(' · ')}` : result.message, result.ok ? 'good' : 'bad');
       if (result.ok) {
         selected = decision;
         refresh();
       }
     });
     enact.disabled = !ready;
-    foot.append(cost, enact, span('if-hint', decision.cooldown > 0 ? `${decision.cooldown} day cooldown` : 'No cooldown'));
+    const requirementNote = missing.length > 0 ? missing.map((check) => check.text).join(', ') : ppShort > 0 ? `${decision.cost} political power required` : decision.cooldown > 0 ? `${decision.cooldown} day cooldown` : 'No cooldown';
+    foot.append(cost, enact, span('if-hint', requirementNote));
     card.append(head, body, foot);
     card.addEventListener('click', (event) => {
       if ((event.target as HTMLElement).closest('button')) return;
@@ -155,14 +160,14 @@ export function mountDecisions(ctx: ScreenContext): Screen {
     }
 
     detailHost.append(sectionLabel('Effects'));
-    detailHost.append(effectList(decision.effects));
+    detailHost.append(effectList(decision.effects, 'No effects recorded.', (effect) => state.effectPlacement(effect)));
 
     const cooldown = state.decisionCooldown(decision);
     if (cooldown > 0) detailHost.append(div('if-hint', `On cooldown for ${cooldown} more days.`));
 
     const enact = button('Enact decision', 'if-btn if-btn--gold if-btn--block', () => {
       const result = state.takeDecision(decision.id);
-      ctx.toast(result.message, result.ok ? 'good' : 'bad');
+      ctx.toast(result.ok ? `${decision.name}: ${decision.effects.map((effect) => effect.text).join(' · ')}` : result.message, result.ok ? 'good' : 'bad');
       if (result.ok) refresh();
     });
     enact.disabled = !state.decisionReady(decision);

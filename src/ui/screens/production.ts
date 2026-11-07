@@ -20,7 +20,7 @@ interface LineRefs {
 export function mountProduction(ctx: ScreenContext): Screen {
   const { state } = ctx;
   const usedBadge = span('if-tag if-tag--gold', `${state.totalFactoriesUsed} / ${state.militaryFactories} factories`);
-  const frame = screenFrame('gear', 'Production', `${state.country.name} · military industry and equipment stocks`, [usedBadge], 'if-screen__body--flush');
+  const frame = screenFrame('gear', 'Production', `${state.country.name} · military industry and equipment stocks`, [usedBadge], 'if-screen__body--flush if-production-screen');
   const layout = div('if-prod-layout');
   frame.body.append(layout);
 
@@ -68,8 +68,9 @@ export function mountProduction(ctx: ScreenContext): Screen {
   const hintPanel = panel('Directorate Notes', 'scroll');
   hintPanel.body.append(
     div('if-hint', 'Each line needs factories from the military industry. Efficiency grows while a line runs; switching lines restarts it.'),
-    div('if-hint', 'Lines consume steel, oil, rubber, aluminium, tungsten and chromium. A shortage slows every line by 40%.'),
-    div('if-hint', 'Factories are freed immediately when you remove a line or reduce its allocation.'),
+    div('if-hint', 'Lines consume steel, oil, rubber, aluminium, tungsten and chromium. The list order is the supply priority: top lines are filled first, and a starved line runs at 60% output.'),
+    div('if-hint', 'Use ▲ / ▼ to move a line. The Trade screen sets how much raw output is exported instead of feeding these lines.'),
+    button('Open trade law', 'if-btn if-btn--sm if-btn--block', () => ctx.open('trade')),
   );
   sideCol.append(hintPanel.element);
 
@@ -98,7 +99,7 @@ export function mountProduction(ctx: ScreenContext): Screen {
       linesHost.append(div('if-empty', div('if-hint', 'No production lines. Add equipment from the catalogue below.')));
       return;
     }
-    for (const line of state.lines) {
+    for (const [lineIndex, line] of state.lines.entries()) {
       const equipment = state.equipmentOf(line);
       if (!equipment) continue;
       const row = div('if-line');
@@ -108,8 +109,10 @@ export function mountProduction(ctx: ScreenContext): Screen {
       const body = div('');
       body.append(span('if-line__name', equipment.name));
       const meta = div('if-line__meta');
+      meta.append(span('if-line__priority', `Priority ${lineIndex + 1}`));
       meta.append(span('', line.paused ? 'Paused' : `${line.factories} factories`));
       meta.append(span('', `${line.efficiency.toFixed(2)} efficiency`));
+      meta.append(span('', `${Math.round(state.lineSupplyMultiplier(line) * 100)}% supplied`));
       body.append(meta);
 
       const effWrap = div('');
@@ -123,6 +126,18 @@ export function mountProduction(ctx: ScreenContext): Screen {
       effWrap.style.minWidth = '90px';
 
       const controls = div('if-factoryctl');
+      const up = button('▲', '', () => {
+        state.moveLine(line.id, -1);
+        ctx.rerender();
+      });
+      up.title = 'Raise production priority';
+      up.disabled = lineIndex === 0;
+      const down = button('▼', '', () => {
+        state.moveLine(line.id, 1);
+        ctx.rerender();
+      });
+      down.title = 'Lower production priority';
+      down.disabled = lineIndex === state.lines.length - 1;
       const minus = button('−', '', () => {
         state.setLineFactories(line.id, line.factories - 1);
         ctx.rerender();
@@ -145,7 +160,7 @@ export function mountProduction(ctx: ScreenContext): Screen {
         ctx.rerender();
       });
       remove.title = 'Remove line';
-      controls.append(minus, value, plus, pause, remove);
+      controls.append(up, down, minus, value, plus, pause, remove);
 
       const out = div('if-line__out');
       const outValue = document.createElement('strong');
@@ -208,15 +223,17 @@ export function mountProduction(ctx: ScreenContext): Screen {
     const needs = state.resourceNeeds();
     for (const info of RESOURCE_INFO) {
       const needed = needs[info.id] ?? 0;
-      const available = state.resources[info.id];
+      const available = state.resourceAvailable(info.id);
       const short = needed > available;
       const row = div(`if-res${short ? ' is-short' : ''}`);
       row.append(icon(info.icon, 'if-ico'), span('', info.name), span('if-res__value', `${fmt(available)} / ${needed > 0 ? `−${fmt(needed)}` : '—'}`));
+      row.title = `Output ${fmt(state.resources[info.id])} · exported ${fmt(state.resourceExported(info.id))} · imported ${fmt(state.resourceImports()[info.id] ?? 0)}`;
       const value = row.querySelector<HTMLElement>('.if-res__value')!;
       resourceRefs.set(info.id, value);
       resourceHost.append(row);
     }
-    resourceHost.append(div('if-hint', 'Values show availability and the daily draw of all running lines.'));
+    resourceHost.append(div('if-hint', 'Available after exports and market imports / daily draw. Trade law controls the split.'));
+    resourceHost.append(button(`Trade law: ${state.tradeLawDef.name}`, 'if-btn if-btn--sm if-btn--ghost if-btn--block', () => ctx.open('trade')));
   }
 
   function renderAll(): void {
@@ -247,9 +264,10 @@ export function mountProduction(ctx: ScreenContext): Screen {
     const needs = state.resourceNeeds();
     for (const info of RESOURCE_INFO) {
       const needed = needs[info.id] ?? 0;
+      const available = state.resourceAvailable(info.id);
       const ref = resourceRefs.get(info.id);
-      if (ref) ref.textContent = `${fmt(state.resources[info.id])} / ${needed > 0 ? `−${fmt(needed)}` : '—'}`;
-      ref?.parentElement?.classList.toggle('is-short', needed > state.resources[info.id]);
+      if (ref) ref.textContent = `${fmt(available)} / ${needed > 0 ? `−${fmt(needed)}` : '—'}`;
+      ref?.parentElement?.classList.toggle('is-short', needed > available);
     }
     summaryRefs[1].textContent = String(state.availableMilitaryFactories);
     summaryRefs[2].textContent = `${Math.round((state.lines.reduce((sum, line) => sum + line.efficiency, 0) / Math.max(1, state.lines.length)) * 100)}%`;

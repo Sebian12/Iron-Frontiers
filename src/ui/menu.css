@@ -44,15 +44,20 @@
   background: radial-gradient(ellipse at 50% 45%, rgba(6, 10, 16, 0.28), rgba(5, 8, 12, 0.74));
 }
 
-.if-main {
+.if-menu-stage {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
+  padding: 16px;
   pointer-events: auto;
 }
 
-.if-panel {
+/*
+ * Menu styling is scoped under .if-menu so the shared game theme (loaded afterwards) cannot
+ * override the title-screen palette and spacing.
+ */
+.if-menu .if-panel {
   width: min(520px, 92vw);
   padding: 36px 34px 26px;
   text-align: center;
@@ -64,7 +69,7 @@
     inset 0 0 70px rgba(0, 0, 0, 0.5);
 }
 
-.if-panel h1 {
+.if-menu .if-panel h1 {
   margin: 0;
   font: 700 40px/1.05 Georgia, 'Times New Roman', serif;
   letter-spacing: 0.16em;
@@ -81,13 +86,36 @@
   color: rgba(163, 146, 114, 0.75);
 }
 
-.if-btn {
+.if-sub--tight {
+  margin-bottom: 20px;
+}
+
+.if-kicker {
+  margin-bottom: 6px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a39272;
+}
+
+.if-panel-title {
+  margin: 0;
+  font: 700 28px/1.1 Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #efdcaa;
+  text-shadow: 0 2px 12px #000;
+}
+
+.if-menu .if-btn {
   display: block;
   width: 100%;
   margin: 8px 0 0;
   padding: 11px 16px;
   font: inherit;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: #e8ddc4;
   background: linear-gradient(#3b3326, #272117);
   border: 1px solid #6a5c45;
@@ -98,36 +126,208 @@
     color 120ms;
 }
 
-.if-btn:disabled {
+.if-menu .if-btn:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.if-btn:not(:disabled):hover {
+.if-menu .if-btn:not(:disabled):hover {
   background: linear-gradient(#4b4130, #322a1f);
   border-color: #a8894f;
   color: #fff3d4;
 }
 
-.if-btn:not(:disabled):active {
+.if-menu .if-btn:not(:disabled):active {
   transform: translateY(1px);
 }
 
-.if-btn-primary {
+.if-menu .if-btn--menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 18px;
+  font-size: 12.5px;
+}
+
+.if-menu .if-btn-primary {
   border-color: #b8964f;
   color: #ffeec2;
   background: linear-gradient(#5b4a29, #3a2f1b);
 }
 
-.if-btn-primary:not(:disabled):hover {
+.if-menu .if-btn-primary:not(:disabled):hover {
   background: linear-gradient(#715c33, #453722);
 }
 
-.if-hint {
+.if-menu .if-btn--quiet {
+  background: transparent;
+  border-color: transparent;
+  color: #a39272;
+}
+
+.if-menu .if-btn--quiet:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: transparent;
+  color: #e6dcc4;
+}
+
+.if-btn__tag {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #bda878;
+  border: 1px solid rgba(189, 168, 120, 0.5);
+  background: rgba(0, 0, 0, 0.25);
+  vertical-align: middle;
+}
+
+.if-menu-hint {
   margin-top: 18px;
   font-size: 12px;
   color: #9b8d74;
 }
+
+/* ------------------------------------------------------------------ settings panel */
+
+.if-menu .if-panel--settings {
+  width: min(620px, 92vw);
+  max-height: calc(100% - 8px);
+  overflow-y: auto;
+  padding: 30px 32px 24px;
+  text-align: left;
+}
+
+.if-settings {
+  margin: 18px 0 4px;
+  border-top: 1px solid #4a3f2d;
+}
+
+.if-setting {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid #3d3427;
+}
+
+.if-setting__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.if-setting__label {
+  font: 600 13px/1.3 Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.04em;
+  color: #efe2c0;
+}
+
+.if-setting__desc {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #a5967c;
+}
+
+.if-setting__control {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.if-stepper {
+  display: flex;
+  align-items: stretch;
+  background: #14110c;
+  border: 1px solid #6a5c45;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.if-stepper__btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font: 600 16px/1 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #e8ddc4;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.if-stepper__btn:hover:not(:disabled) {
+  background: rgba(197, 164, 106, 0.16);
+  color: #ffeec2;
+}
+
+.if-stepper__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.if-stepper__value {
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #ffeec2;
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid #3d3427;
+  border-right: 1px solid #3d3427;
+}
+
+.if-toggle {
+  min-width: 68px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #94876e;
+  background: linear-gradient(#2a2419, #1a160f);
+  border: 1px solid #5a4d38;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    color 120ms;
+}
+
+.if-toggle:hover {
+  border-color: #a8894f;
+  color: #e8ddc4;
+}
+
+.if-toggle.is-on {
+  color: #ffeec2;
+  border-color: #b8964f;
+  background: linear-gradient(#5b4a29, #3a2f1b);
+  box-shadow: inset 0 0 10px rgba(197, 164, 106, 0.25);
+}
+
+.if-menu-actions {
+  margin-top: 8px;
+}
+
+.if-menu-actions--row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.if-menu .if-menu-actions--row .if-btn {
+  width: auto;
+  margin: 0;
+  padding: 10px 20px;
+}
+
+/* ------------------------------------------------------------------ country picker */
 
 .if-pick {
   position: absolute;
@@ -187,7 +387,7 @@
   background: #4a3f2d;
 }
 
-.if-row {
+.if-pickrow {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -202,11 +402,11 @@
   cursor: pointer;
 }
 
-.if-row:hover {
+.if-pickrow:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.if-row.is-selected {
+.if-pickrow.is-selected {
   background: rgba(200, 169, 97, 0.16);
   border-left-color: #d3b25f;
   color: #fff3d4;
@@ -214,10 +414,13 @@
 
 .if-swatch {
   flex: none;
-  width: 12px;
-  height: 12px;
+  width: 22px;
+  height: 14px;
   border: 1px solid rgba(0, 0, 0, 0.55);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .if-name {
@@ -232,7 +435,7 @@
   color: #94876e;
 }
 
-.if-empty {
+.if-pickempty {
   padding: 14px 16px;
   color: #8d816a;
 }
@@ -282,6 +485,18 @@
   width: auto;
   margin: 0;
   padding: 9px 22px;
+}
+
+@media (max-width: 620px) {
+  .if-setting {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .if-menu .if-panel--settings {
+    padding: 24px 20px 20px;
+  }
 }
 
 @media (max-width: 600px) {

@@ -13,6 +13,7 @@ export type ScreenId =
   | 'research'
   | 'production'
   | 'construction'
+  | 'trade'
   | 'military'
   | 'diplomacy'
   | 'intelligence'
@@ -38,6 +39,8 @@ export interface ScreenContext {
   rerender(): void;
   toast(message: string, kind?: ToastKind): void;
   openDiplomacy(countryId: number): void;
+  /** Opens the province sheet for a map province. */
+  openProvince(provinceId: number): void;
 }
 
 export interface Screen {

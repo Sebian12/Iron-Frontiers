@@ -1,7 +1,9 @@
-import { button, countStat, div, icon, meterBlock, span, tag, withTip } from '../components';
+import { button, div, icon, meterBlock, span, tag, withTip } from '../components';
 import type { Screen, ScreenContext } from '../screen';
-import { flag, flagBackground, ideologyName } from '../screen';
-import { compact, fmt, pct } from '../format';
+import { ideologyName } from '../screen';
+import { flagImage } from '../flags';
+import { fmt } from '../format';
+import { terrainDef } from '../../sim/terrain';
 
 // Strategic overview: floating command cards over the live Pixi map. Everything here is read from
 // the running GameState, so the numbers match the other screens and update as time passes.
@@ -20,12 +22,10 @@ export function mountOverview(ctx: ScreenContext): Screen {
   const countryBody = div('if-mapcard__body if-countryhead');
 
   const portraitWrap = div('');
-  const flagEl = flag(state.world.countries[state.countryId].color, country.accent, 'if-flag');
-  flagEl.style.width = '100%';
-  flagEl.style.height = '4px';
+  const flagEl = flagImage(state.world.countries[state.countryId], 'if-flag if-country-flag');
   portraitWrap.style.width = '100%';
-  portraitWrap.append(flagEl);
   portraitWrap.style.marginBottom = '8px';
+  portraitWrap.append(flagEl);
 
   const meta = div('if-countryhead__meta');
   const nameEl = document.createElement('h3');
@@ -46,35 +46,17 @@ export function mountOverview(ctx: ScreenContext): Screen {
 
   meta.append(nameEl, tagLine, div('if-kv', span('if-kv__label', 'Coalition'), span('if-kv__value', country.coalition ?? '—')), leaderRow);
 
-  countryBody.append(portraitWrap, meta);
-
-  const statsBody = div('if-mapcard__body');
-  statsBody.style.paddingTop = '0';
-  statsBody.style.borderTop = '1px solid var(--border-soft)';
-  const meters = div('if-grid2');
-  meters.append(
-    meterBlock(state.stability, state.stability < 0.4 ? 'red' : 'green', 'Stability'),
-    meterBlock(state.warSupport, 'gold', 'War Support'),
-  );
-  const statRow = div('if-grid2');
-  statRow.style.marginTop = '9px';
-  const ppStat = countStat('coin', '', 'Political Power', 'Political power is spent on focuses, advisors, decisions and diplomacy. It grows by about 1 per day.');
-  const mpStat = countStat('people', '', 'Manpower', 'Available recruits. Fielding divisions and reinforcing them consumes manpower.');
-  ppStat.querySelector('.if-statcard__value')!.textContent = compact(state.politicalPower);
-  refs.pp = ppStat.querySelector('.if-statcard__value') as HTMLElement;
-  mpStat.querySelector('.if-statcard__value')!.textContent = compact(state.manpower);
-  refs.mp = mpStat.querySelector('.if-statcard__value') as HTMLElement;
-  statRow.append(ppStat, mpStat);
-
-  const jumpRow = div('if-row');
+  const jumpRow = div('if-row if-row--wrap');
   jumpRow.style.marginTop = '10px';
   jumpRow.append(
     button('Politics', 'if-btn if-btn--sm', () => ctx.open('politics')),
     button('Focus Tree', 'if-btn if-btn--sm if-btn--gold', () => ctx.open('focus')),
     button('Economy', 'if-btn if-btn--sm if-btn--ghost', () => ctx.open('construction')),
   );
-  statsBody.append(meters, statRow, jumpRow);
-  countryCard.append(countryHeadCard, countryBody, statsBody);
+  meta.append(jumpRow);
+
+  countryBody.append(portraitWrap, meta);
+  countryCard.append(countryHeadCard, countryBody);
 
   // ---------------------------------------------------------------- focus / industry card
   const focusCard = div('if-mapcard if-mapcard--tr if-mapcard--w320');
@@ -160,20 +142,26 @@ export function mountOverview(ctx: ScreenContext): Screen {
     const owner = state.world.countries[province.owner];
     const ownerRow = div('if-province__owner');
     if (owner && owner.id !== 0) {
-      const swatch = span('if-flagmini');
-      swatch.style.background = flagBackground(owner.color, content.ideologies[state.country.ideology]?.color ?? '#555');
-      ownerRow.append(swatch, span('', owner.name));
+      ownerRow.append(flagImage(owner, 'if-flagmini'), span('', owner.name));
     } else {
       ownerRow.append(span('', 'Open sea'));
     }
     body.append(ownerRow);
+    const terrain = terrainDef(province.terrain);
+    const development = state.provinceDevelopment(province.id);
+    const used = state.provinceUsedSlots(province.id);
+    const slots = state.provinceBuildingSlots(province.id);
     body.append(div('if-kv', span('if-kv__label', 'Province'), span('if-kv__value', `#${province.id}`)));
     body.append(div('if-kv', span('if-kv__label', 'State'), span('if-kv__value', st?.name ?? '—')));
-    body.append(div('if-kv', span('if-kv__label', 'Neighbours'), span('if-kv__value', fmt(province.neighbors.length))));
+    body.append(div('if-kv', span('if-kv__label', 'Terrain'), span('if-kv__value', terrain.name)));
+    body.append(div('if-kv', span('if-kv__label', 'Coast'), span('if-kv__value', province.coastal ? 'Coastal' : 'Landlocked')));
+    body.append(div('if-kv', span('if-kv__label', 'Building slots'), span('if-kv__value', `${used} / ${slots}`)));
+    body.append(div('if-kv', span('if-kv__label', 'Infrastructure'), span('if-kv__value', `${development.infrastructure} / 5`)));
     if (owner && owner.id !== 0) {
-      const actions = div('if-row');
+      const actions = div('if-row if-row--wrap');
       actions.style.marginTop = '8px';
       actions.append(
+        button('Province menu', 'if-btn if-btn--sm if-btn--gold', () => ctx.openProvince(province.id)),
         button('Diplomacy', 'if-btn if-btn--sm', () => {
           state.selectedCountryId = owner.id;
           ctx.map.highlightCountry(owner.id);
@@ -249,17 +237,10 @@ export function mountOverview(ctx: ScreenContext): Screen {
   }
 
   function refresh(): void {
-    refs.pp.textContent = compact(state.politicalPower);
-    refs.mp.textContent = compact(state.manpower);
     refs.treasury.textContent = `${fmt(state.treasury)} M`;
     const balance = state.income - state.expenses;
     refs.balance.textContent = `${balance >= 0 ? '+' : ''}${fmt(balance)}`;
     refs.balance.className = `if-kv__value ${balance >= 0 ? 'if-num--pos' : 'if-num--neg'}`;
-    const meterBars = meters.querySelectorAll<HTMLElement>('.if-meter__fill');
-    meterBars[0].style.width = `${state.stability * 100}%`;
-    meterBars[1].style.width = `${state.warSupport * 100}%`;
-    meters.querySelectorAll<HTMLElement>('.if-meterblock__value')[0].textContent = pct(state.stability);
-    meters.querySelectorAll<HTMLElement>('.if-meterblock__value')[1].textContent = pct(state.warSupport);
     const values: string[] = [fmt(state.civilianFactories), fmt(state.militaryFactories), fmt(state.dockyards), fmt(state.divisions.length)];
     industryRefs.forEach((node, index) => (node.textContent = values[index]));
     paintFocus();

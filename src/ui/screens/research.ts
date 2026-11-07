@@ -29,7 +29,7 @@ export function mountResearch(ctx: ScreenContext): Screen {
   }
 
   const speedBadge = span('if-tag if-tag--blue', `Research speed +${Math.round(state.researchSpeed * 100)}%`);
-  const frame = screenFrame('flask', 'Research', `${state.country.name} · scientific and military development`, [speedBadge], 'if-screen__body--flush');
+  const frame = screenFrame('flask', 'Research', `${state.country.name} · scientific and military development`, [speedBadge], 'if-screen__body--flush if-research-screen');
   const layout = div('if-research-layout');
   frame.body.append(layout);
 

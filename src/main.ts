@@ -8,12 +8,15 @@ import { runPoliticalSelfTests } from './sim/politicalTests';
 import { createGameShell, type GameShell } from './ui/shell';
 import { showTipAt, hideTipNow } from './ui/tooltip';
 import type { MapBridge } from './ui/screen';
+import { applySettings, getSettings } from './ui/settings';
+import { terrainDef } from './sim/terrain';
 import './ui/theme.css';
 
 async function start() {
   document.body.style.margin = '0';
   document.body.style.overflow = 'hidden';
   document.body.style.background = '#183454';
+  applySettings();
   const finishLoading = showLoadingScreen();
 
   const world = await loadWorld();
@@ -35,6 +38,10 @@ async function start() {
   const HUD_LEFT = 66;
   const HUD_TOP = 50;
   const HUD_BOTTOM = 68;
+  // The HUD is scaled by the interface setting, so camera framing uses the scaled bar sizes.
+  const hudLeft = () => HUD_LEFT * getSettings().uiScale;
+  const hudTop = () => HUD_TOP * getSettings().uiScale;
+  const hudBottom = () => HUD_BOTTOM * getSettings().uiScale;
 
   function clampCamera() {
     const vw = window.innerWidth;
@@ -66,13 +73,14 @@ async function start() {
     return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
   }
 
-  function focusCountry(countryId: number, insetLeft = HUD_LEFT) {
+  function focusCountry(countryId: number, insetLeft?: number) {
+    const left = insetLeft ?? hudLeft();
     const bounds = countryBounds(countryId);
     if (!bounds) return;
-    const viewWidth = Math.max(window.innerWidth - insetLeft, 1);
-    const viewHeight = Math.max(window.innerHeight - HUD_TOP - HUD_BOTTOM, 1);
-    const centerX = insetLeft + viewWidth / 2;
-    const centerY = HUD_TOP + viewHeight / 2;
+    const viewWidth = Math.max(window.innerWidth - left, 1);
+    const viewHeight = Math.max(window.innerHeight - hudTop() - hudBottom(), 1);
+    const centerX = left + viewWidth / 2;
+    const centerY = hudTop() + viewHeight / 2;
     const scale = Math.min(
       Math.max(
         Math.min(
@@ -96,8 +104,8 @@ async function start() {
     const province = world.provinces[provinceId];
     if (!province) return;
     const scale = Math.max(map.view.scale.x, fitScale() * 6);
-    const centerX = HUD_LEFT + (window.innerWidth - HUD_LEFT) / 2;
-    const centerY = HUD_TOP + (window.innerHeight - HUD_TOP - HUD_BOTTOM) / 2;
+    const centerX = hudLeft() + (window.innerWidth - hudLeft()) / 2;
+    const centerY = hudTop() + (window.innerHeight - hudTop() - hudBottom()) / 2;
     map.view.scale.set(scale);
     map.view.position.set(centerX - province.x * scale, centerY - province.y * scale);
     map.setZoom(scale);
@@ -117,7 +125,7 @@ async function start() {
   const menu = createStartMenu(world, {
     onSelect: (countryId) => {
       const panel = document.querySelector('.if-pick');
-      focusCountry(countryId, panel instanceof HTMLElement ? 0 : HUD_LEFT);
+      focusCountry(countryId, panel instanceof HTMLElement ? 0 : undefined);
     },
     onStart: (countryId) => {
       const content = loadContent(world, countryId);
@@ -176,13 +184,14 @@ async function start() {
         hoveredProvince = id;
         map.setHover(id);
       }
-      if (id > 0 && !dragging && shell.currentScreen() === 'overview') {
+      if (id > 0 && !dragging && getSettings().mapTooltips && shell.currentScreen() === 'overview') {
         const province = world.provinces[id];
         const owner = world.countries[province.owner];
         const provinceState = world.states[province.state];
         if (owner && owner.id !== 0) {
+          const terrain = terrainDef(province.terrain);
           showTipAt(
-            `<span class="if-tip__title">${provinceState?.name ?? province.name}</span>Province #${province.id} · ${owner.name}<span class="if-tip__note">Click to select · drag to pan · wheel to zoom</span>`,
+            `<span class="if-tip__title">${provinceState?.name ?? province.name}</span>Province #${province.id} · ${owner.name} · ${terrain.name}<span class="if-tip__note">Click to select · double-click for the province menu · drag to pan · wheel to zoom</span>`,
             event.clientX,
             event.clientY,
           );
@@ -216,8 +225,15 @@ async function start() {
     const id = map.provinceAt(local.x, local.y);
     if (menu.handleMapClick(id > 0 ? world.provinces[id].owner : 0)) return;
     if (!shell) return;
-    map.setSelected(id);
-    shell.refresh();
+    shell.selectProvince(id);
+    hideTipNow();
+  });
+
+  canvas.addEventListener('dblclick', (event) => {
+    if (!shell) return;
+    const local = map.view.toLocal({ x: event.clientX, y: event.clientY });
+    const id = map.provinceAt(local.x, local.y);
+    if (id > 0) shell.showProvince(id);
   });
 }
 

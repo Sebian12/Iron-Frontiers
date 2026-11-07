@@ -134,10 +134,19 @@ export function effectRow(effect: Effect): HTMLDivElement {
   return node;
 }
 
-export function effectList(effects: Effect[], emptyText = 'No effects recorded.'): HTMLDivElement {
+export function effectList(
+  effects: Effect[],
+  emptyText = 'No effects recorded.',
+  placement?: (effect: Effect) => string | null,
+): HTMLDivElement {
   const list = div('if-effectlist');
   if (effects.length === 0) list.append(span('if-muted', emptyText));
-  for (const effect of effects) list.append(effectRow(effect));
+  for (const effect of effects) {
+    const row = effectRow(effect);
+    const extra = placement?.(effect);
+    if (extra) row.append(span('if-effect__placement', extra));
+    list.append(row);
+  }
   return list;
 }
 
@@ -169,7 +178,7 @@ export interface ModalHandle {
 export function modal(options: ModalOptions): ModalHandle {
   const backdrop = div('if-modal-backdrop');
   const dialog = div('if-modal');
-  if (options.width) dialog.style.width = `min(${options.width}px, 94vw)`;
+  if (options.width) dialog.style.width = `min(${options.width}px, calc(94vw / var(--if-ui-scale, 1)))`;
   dialog.setAttribute('role', 'dialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-label', options.title);

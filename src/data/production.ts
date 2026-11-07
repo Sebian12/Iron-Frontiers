@@ -130,6 +130,8 @@ export interface ProductionLineState {
 export interface ConstructionState {
   id: number;
   buildingId: string;
+  /** Province that receives the finished building. */
+  provinceId: number;
   cost: number;
   progress: number;
   count: number;

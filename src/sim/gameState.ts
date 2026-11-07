@@ -16,12 +16,15 @@ import type {
 } from './content';
 import type { PoliticalContext, PoliticalHistoryEntry, PoliticalHistoryType, PoliticalState } from './politics';
 import { PoliticalManager, clamp100, createPoliticalState, systemById, transitionById } from './politics';
-import type { World } from './world';
+import type { Province, World } from './world';
 import type { ConstructionState, EquipmentDef, ProductionLineState } from '../data/production';
 import { BUILDINGS, EQUIPMENT, buildingById, equipmentById } from '../data/production';
+import { createDevelopment, provinceBuildCost, provinceBuildSpeed, provinceSlots, usedSlots, type ProvinceDevelopment } from './province';
+import { hash01, terrainDef, type TerrainDef } from './terrain';
 import { OPERATIONS, type IntelligenceOperation } from '../data/intelligence';
 import { divisionTemplate } from '../data/divisions';
 import { factionOf, ideologyOf, relationBetween } from '../data/geopolitics';
+import { RESOURCE_MARKET_VALUE, TRADE_LAWS, TRADE_LAW_CHANGE_COST, tradeLawById, type TradeLawId } from './trade';
 
 export type AdvisorSlot = 'political' | 'staff' | 'intelligence' | 'theorist';
 
@@ -73,6 +76,8 @@ export interface DivisionState extends DivisionDef {
   id: number;
   commander: number;
   templateId: string;
+  /** Province the division is stationed in; terrain modifiers apply there. */
+  provinceId: number;
 }
 
 export interface GameAlert {
@@ -139,6 +144,7 @@ export class GameState {
   dockyards: number;
   infrastructure: number;
   resources: CountryResources;
+  tradeLaw: TradeLawId = 'semi_open';
 
   focus: FocusProgress | null = null;
   completedFocuses = new Set<string>();
@@ -155,6 +161,7 @@ export class GameState {
   lines: ProductionLineState[] = [];
   stockpile: Record<string, number> = {};
   construction: ConstructionState[] = [];
+  development = new Map<number, ProvinceDevelopment>();
   private nextId = 1;
 
   advisors: Record<AdvisorSlot, string | null> = {
@@ -207,11 +214,13 @@ export class GameState {
     this.research = new Array(content.def.researchSlots).fill(null);
     this.selectedCountryId = countryId;
     this.commanders = content.def.army.commanders.slice();
+    const startingProvinces = world.provinces.filter((province) => province.id > 0 && province.owner === countryId);
     this.divisions = content.def.army.divisions.map((division, index) => ({
       ...division,
       id: this.takeId(),
       commander: index % Math.max(1, this.commanders.length),
       templateId: division.type,
+      provinceId: startingProvinces[index % Math.max(1, startingProvinces.length)]?.id ?? 0,
     }));
 
     this.political = createPoliticalState(content.def, content.politics);
@@ -219,6 +228,7 @@ export class GameState {
 
     this.seedStockpile();
     this.seedProduction();
+    this.seedProvinceDevelopment();
     this.seedOperatives();
 
     const system = this.politicalSystem;
@@ -226,6 +236,138 @@ export class GameState {
 
     this.notify('info', 'Campaign begins', `${content.def.name} · 1 January 1936. The national focus tree is ready; choose a focus to set the country's course.`, 'focus');
     this.notify('info', 'Economy', 'Civilian factories are waiting for construction orders and military factories can be assigned to production lines.', 'production');
+  }
+
+  // ---------------------------------------------------------------- provinces
+
+  ownedProvinces(): Province[] {
+    return this.world.provinces.filter((province) => province.id > 0 && province.owner === this.countryId);
+  }
+
+  defaultProvinceId(): number {
+    const owned = this.ownedProvinces();
+    if (owned.length === 0) return 0;
+    return owned.some((province) => province.id === this.selectedProvinceId) ? this.selectedProvinceId : owned[0].id;
+  }
+
+  provinceDevelopment(provinceId: number): ProvinceDevelopment {
+    let development = this.development.get(provinceId);
+    if (!development) {
+      development = createDevelopment();
+      this.development.set(provinceId, development);
+    }
+    return development;
+  }
+
+  provinceBuildingSlots(provinceId: number): number {
+    const province = this.world.provinces[provinceId];
+    if (!province) return 0;
+    return provinceSlots(province, this.provinceDevelopment(provinceId));
+  }
+
+  provinceUsedSlots(provinceId: number): number {
+    return usedSlots(this.provinceDevelopment(provinceId));
+  }
+
+  provinceBuildingCount(provinceId: number, buildingId: string): number {
+    return this.provinceDevelopment(provinceId).buildings[buildingId] ?? 0;
+  }
+
+  /** Orders in the national queue also reserve a province slot until they complete. */
+  provinceQueuedBuildings(provinceId: number, buildingId?: string): number {
+    return this.construction.filter((item) => item.provinceId === provinceId && (!buildingId || item.buildingId === buildingId)).length;
+  }
+
+  provinceQueuedSlots(provinceId: number): number {
+    return this.construction.filter((item) => item.provinceId === provinceId && item.buildingId !== 'infrastructure').length;
+  }
+
+  provinceConstructionCost(buildingId: string, provinceId: number): number {
+    const building = buildingById(buildingId);
+    const province = this.world.provinces[provinceId];
+    return building && province ? provinceBuildCost(building, province) : 0;
+  }
+
+  provinceTerrain(provinceId: number): TerrainDef {
+    return terrainDef(this.world.provinces[provinceId]?.terrain);
+  }
+
+  provinceCanBuild(buildingId: string, provinceId: number): ActionResult {
+    const building = buildingById(buildingId);
+    const province = this.world.provinces[provinceId];
+    if (!building) return { ok: false, message: 'Unknown building.' };
+    if (!province || provinceId <= 0) return { ok: false, message: 'Select a province first.' };
+    if (province.owner !== this.countryId) return { ok: false, message: 'Construction is only possible in your own provinces.' };
+    if (building.id === 'dockyard' && !province.coastal) return { ok: false, message: `${province.name} is landlocked. Dockyards can only be built in a coastal province.` };
+    const development = this.provinceDevelopment(provinceId);
+    if (building.id === 'infrastructure') {
+      const queuedInfrastructure = this.provinceQueuedBuildings(provinceId, 'infrastructure');
+      if (development.infrastructure + queuedInfrastructure >= 5) return { ok: false, message: `${province.name} already has the maximum infrastructure level (including orders in the queue).` };
+      return { ok: true, message: 'Infrastructure can be improved.' };
+    }
+    if (building.id === 'anti_air' && (development.buildings.anti_air ?? 0) + this.provinceQueuedBuildings(provinceId, 'anti_air') >= 1) {
+      return { ok: false, message: `${province.name} already has an anti-air battery or one in the queue.` };
+    }
+    const used = usedSlots(development);
+    const queued = this.provinceQueuedSlots(provinceId);
+    if (used + queued >= provinceSlots(province, development)) {
+      return { ok: false, message: `${province.name} has no free building slots (${used + queued} / ${this.provinceBuildingSlots(provinceId)}, including queued orders).` };
+    }
+    return { ok: true, message: 'A building slot is available.' };
+  }
+
+  divisionProvince(division: DivisionState): Province | undefined {
+    return this.world.provinces[division.provinceId];
+  }
+
+  divisionTerrain(division: DivisionState): TerrainDef {
+    return terrainDef(this.divisionProvince(division)?.terrain);
+  }
+
+  divisionAttack(division: DivisionState, base: number): number {
+    return Math.max(0, Math.round(base * (1 + this.divisionTerrain(division).attack / 100)));
+  }
+
+  divisionDefence(division: DivisionState, base: number): number {
+    return Math.max(0, Math.round(base * (1 + this.divisionTerrain(division).defence / 100)));
+  }
+
+  divisionSupply(division: DivisionState): number {
+    return this.divisionTerrain(division).supply;
+  }
+
+  private seedProvinceDevelopment(): void {
+    const owned = this.ownedProvinces();
+    if (owned.length === 0) return;
+    const ordered = [...owned].sort((a, b) => provinceSlots(b, this.provinceDevelopment(b.id)) - provinceSlots(a, this.provinceDevelopment(a.id)));
+    const baseInfrastructure = Math.min(3, Math.max(0, Math.round((this.infrastructure - 2) / 2)));
+    for (const province of owned) {
+      const development = this.provinceDevelopment(province.id);
+      development.infrastructure = Math.min(4, baseInfrastructure + (hash01(`${this.country.tag}-${province.id}-infra`) > 0.62 ? 1 : 0));
+    }
+    const factoryCounts: [string, number][] = [
+      ['civilian_factory', this.civilianFactories],
+      ['military_factory', this.militaryFactories],
+      ['dockyard', this.dockyards],
+    ];
+    let cursor = 0;
+    for (const [buildingId, total] of factoryCounts) {
+      for (let placed = 0; placed < total; placed++) {
+        let target: Province | null = null;
+        for (let offset = 0; offset < ordered.length; offset++) {
+          const province = ordered[(cursor + offset) % ordered.length];
+          if (buildingId === 'dockyard' && !province.coastal) continue;
+          if (usedSlots(this.provinceDevelopment(province.id)) < provinceSlots(province, this.provinceDevelopment(province.id))) {
+            target = province;
+            cursor = (cursor + offset + 1) % ordered.length;
+            break;
+          }
+        }
+        if (!target) break;
+        const development = this.provinceDevelopment(target.id);
+        development.buildings[buildingId] = (development.buildings[buildingId] ?? 0) + 1;
+      }
+    }
   }
 
   private takeId(): number {
@@ -277,14 +419,14 @@ export class GameState {
   get income(): number {
     const base = this.country.stats.income;
     const factoryDelta = (this.civilianFactories - this.country.industry.civilianFactories) * 1.8;
-    return Math.round(base + factoryDelta + this.tradeAgreements.size * 2);
+    return Math.round(base + factoryDelta + this.tradeAgreements.size * 2 + this.tradeIncome);
   }
 
   get expenses(): number {
     const base = this.country.stats.expenses;
     const militaryDelta = (this.militaryFactories - this.country.industry.militaryFactories) * 2.1;
     const dockDelta = (this.dockyards - this.country.industry.dockyards) * 1.7;
-    return Math.round(base + militaryDelta + dockDelta);
+    return Math.round(base + militaryDelta + dockDelta + this.tradeImportCost);
   }
 
   get industrialCapacity(): number {
@@ -319,6 +461,76 @@ export class GameState {
     return Math.max(0, this.militaryFactories - this.totalFactoriesUsed);
   }
 
+  // ---------------------------------------------------------------- trade
+
+  get tradeLawDef() {
+    return tradeLawById(this.tradeLaw) ?? TRADE_LAWS[1];
+  }
+
+  resourceRetained(key: keyof CountryResources): number {
+    return this.resources[key] * (1 - this.tradeLawDef.exportShare);
+  }
+
+  resourceExported(key: keyof CountryResources): number {
+    return this.resources[key] * this.tradeLawDef.exportShare;
+  }
+
+  /** Resources bought abroad to cover the part of a shortfall the current law permits. */
+  resourceImports(): Partial<CountryResources> {
+    const result: Partial<CountryResources> = {};
+    const needs = this.resourceNeeds();
+    const coverage = this.tradeLawDef.importCoverage;
+    for (const key of RESOURCE_KEYS) {
+      const needed = needs[key] ?? 0;
+      const missing = needed - this.resourceRetained(key);
+      if (missing > 0 && coverage > 0) {
+        const amount = Math.min(missing, needed * coverage);
+        if (amount > 0) result[key] = amount;
+      }
+    }
+    return result;
+  }
+
+  resourceAvailable(key: keyof CountryResources): number {
+    return this.resourceRetained(key) + (this.resourceImports()[key] ?? 0);
+  }
+
+  resourceSupply(): CountryResources {
+    const imports = this.resourceImports();
+    const supply = {} as CountryResources;
+    for (const key of RESOURCE_KEYS) supply[key] = this.resourceRetained(key) + (imports[key] ?? 0);
+    return supply;
+  }
+
+  get tradeIncome(): number {
+    let value = 0;
+    for (const key of RESOURCE_KEYS) value += this.resourceExported(key) * RESOURCE_MARKET_VALUE[key];
+    return Math.round(value * 10) / 10;
+  }
+
+  get tradeImportCost(): number {
+    const imports = this.resourceImports();
+    let value = 0;
+    const multiplier = this.tradeLawDef.importPrice;
+    for (const key of RESOURCE_KEYS) value += (imports[key] ?? 0) * RESOURCE_MARKET_VALUE[key] * multiplier;
+    return Math.round(value * 10) / 10;
+  }
+
+  get tradeBalance(): number {
+    return this.tradeIncome - this.tradeImportCost;
+  }
+
+  setTradeLaw(id: TradeLawId): ActionResult {
+    const law = tradeLawById(id);
+    if (!law) return { ok: false, message: 'Unknown trade law.' };
+    if (this.tradeLaw === id) return { ok: false, message: `${law.name} is already in force.` };
+    if (this.politicalPower < TRADE_LAW_CHANGE_COST) return { ok: false, message: `Requires ${TRADE_LAW_CHANGE_COST} political power.` };
+    this.politicalPower -= TRADE_LAW_CHANGE_COST;
+    this.tradeLaw = id;
+    this.notify('info', 'Trade law changed', `${law.name} is now in force: ${Math.round(law.exportShare * 100)}% of resources are exported and imports cover up to ${Math.round(law.importCoverage * 100)}% of a shortfall.`, 'trade');
+    return { ok: true, message: `${law.name} enacted.` };
+  }
+
   // ---------------------------------------------------------------- effects
 
   applyBundle(bundle: EffectBundle | undefined, sign = 1): void {
@@ -328,9 +540,22 @@ export class GameState {
     if (bundle.warSupport) this.warSupport = clamp(this.warSupport + bundle.warSupport * sign);
     if (bundle.manpower) this.manpower = Math.max(0, this.manpower + bundle.manpower * sign);
     if (bundle.treasury) this.treasury = Math.max(-9999, this.treasury + bundle.treasury * sign);
-    if (bundle.civilianFactories) this.civilianFactories = Math.max(1, this.civilianFactories + bundle.civilianFactories * sign);
-    if (bundle.militaryFactories) this.militaryFactories = Math.max(0, this.militaryFactories + bundle.militaryFactories * sign);
-    if (bundle.dockyards) this.dockyards = Math.max(0, this.dockyards + bundle.dockyards * sign);
+    if (bundle.civilianFactories) {
+      if (bundle.civilianFactories > 0 && sign > 0) this.placeFactories('civilian_factory', bundle.civilianFactories);
+      this.civilianFactories = Math.max(1, this.civilianFactories + bundle.civilianFactories * sign);
+    }
+    if (bundle.militaryFactories) {
+      if (bundle.militaryFactories > 0 && sign > 0) this.placeFactories('military_factory', bundle.militaryFactories);
+      this.militaryFactories = Math.max(0, this.militaryFactories + bundle.militaryFactories * sign);
+    }
+    if (bundle.dockyards) {
+      if (bundle.dockyards > 0 && sign > 0) {
+        const placed = this.placeFactories('dockyard', bundle.dockyards);
+        this.dockyards = Math.max(0, this.dockyards + placed);
+      } else {
+        this.dockyards = Math.max(0, this.dockyards + bundle.dockyards * sign);
+      }
+    }
     if (bundle.infrastructure) this.infrastructure = clamp(this.infrastructure + bundle.infrastructure * sign, 0, 10);
     if (bundle.researchSlots) {
       const slots = Math.max(1, this.research.length + bundle.researchSlots * sign);
@@ -345,6 +570,56 @@ export class GameState {
       sumRates(this.extraRates, effect.rates);
       if (effect.political) this.applyPoliticalEffect(effect.political);
     }
+  }
+
+  /** Best free province for a newly granted factory; dockyards need a coastline. */
+  private factoryPlacementTarget(buildingId: string): Province | null {
+    let target: Province | null = null;
+    let bestFree = 0;
+    for (const province of this.ownedProvinces()) {
+      if (buildingId === 'dockyard' && !province.coastal) continue;
+      const free = this.provinceBuildingSlots(province.id) - this.provinceUsedSlots(province.id);
+      if (free > bestFree) {
+        bestFree = free;
+        target = province;
+      }
+    }
+    return target;
+  }
+
+  private placeFactories(buildingId: string, amount: number): number {
+    let placed = 0;
+    for (let index = 0; index < Math.max(0, Math.round(amount)); index++) {
+      const target = this.factoryPlacementTarget(buildingId);
+      if (!target) break;
+      const development = this.provinceDevelopment(target.id);
+      development.buildings[buildingId] = (development.buildings[buildingId] ?? 0) + 1;
+      placed += 1;
+    }
+    return placed;
+  }
+
+  /** Human-readable destination shown next to factory rewards in focus and decision tooltips. */
+  effectPlacement(effect: Effect): string | null {
+    const bundle = effect.bundle;
+    if (!bundle) return null;
+    const entries: { key: keyof EffectBundle; id: string; label: string }[] = [
+      { key: 'civilianFactories', id: 'civilian_factory', label: 'civilian factory' },
+      { key: 'militaryFactories', id: 'military_factory', label: 'military factory' },
+      { key: 'dockyards', id: 'dockyard', label: 'dockyard' },
+    ];
+    for (const entry of entries) {
+      const value = bundle[entry.key];
+      if (typeof value !== 'number' || value <= 0) continue;
+      const target = this.factoryPlacementTarget(entry.id);
+      const destination = target
+        ? target.name
+        : entry.id === 'dockyard'
+          ? 'no coastal province with a free slot'
+          : 'national reserve (no free province slot)';
+      return `+${value} ${entry.label} → ${destination}`;
+    }
+    return null;
   }
 
   private applyPoliticalEffect(effect: PoliticalEffect): void {
@@ -447,7 +722,7 @@ export class GameState {
   }
 
   canStartFocus(id: string): ActionResult {
-    if (this.focus) return { ok: false, message: 'Another national focus is already in progress.' };
+    if (this.focus?.id === id) return { ok: false, message: 'This focus is already in progress.' };
     if (this.focusState(id) === 'completed') return { ok: false, message: 'This focus is already completed.' };
     if (this.focusState(id) === 'bypassed') return { ok: false, message: 'This focus was bypassed.' };
     if (this.focusState(id) === 'invalidated') return { ok: false, message: this.focusInvalidReason(id) ?? 'The current constitution has invalidated this focus.' };
@@ -469,10 +744,14 @@ export class GameState {
     const check = this.canStartFocus(id);
     if (!check.ok) return check;
     const focus = this.focusById(id)!;
+    const previous = this.focus ? this.focusById(this.focus.id) : null;
+    if (previous) {
+      this.notify('warn', 'Focus changed', `${previous.name} was abandoned. Its progress is lost and its political power cost is not refunded.`, 'focus');
+    }
     this.politicalPower -= focus.cost ?? 0;
     this.focus = { id, elapsed: 0 };
-    this.notify('info', 'Focus started', `${focus.name} — expected completion in ${focus.days} days.`, 'focus');
-    return { ok: true, message: 'Focus started.' };
+    this.notify('info', previous ? 'Focus switched' : 'Focus started', `${focus.name} — expected completion in ${focus.days} days.`, 'focus');
+    return { ok: true, message: previous ? `Switched to ${focus.name}.` : `Focus started: ${focus.name}.` };
   }
 
   abandonFocus(): void {
@@ -652,7 +931,33 @@ export class GameState {
     const equipment = this.equipmentOf(line);
     if (!equipment || line.factories === 0 || line.paused) return 0;
     const ic = line.factories * 4.5 * line.efficiency * (1 + this.factoryOutput);
-    return Math.max(0, ic / Math.max(0.1, equipment.cost));
+    return Math.max(0, (ic / Math.max(0.1, equipment.cost)) * this.lineSupplyMultiplier(line));
+  }
+
+  /**
+   * Resources are allocated from the top production line down. The first line receives all it
+   * needs; later lines work with the remainder. A line with no resources still runs at 60%.
+   */
+  lineSupplyMultiplier(line: ProductionLineState): number {
+    if (line.factories <= 0 || line.paused) return 0;
+    const supply = this.resourceSupply();
+    for (const entry of this.lines) {
+      if (entry.paused || entry.factories <= 0) continue;
+      const equipment = this.equipmentOf(entry);
+      if (!equipment) continue;
+      let fulfilment = 1;
+      for (const key of RESOURCE_KEYS) {
+        const amount = (equipment.needs[key] ?? 0) * entry.factories;
+        if (amount <= 0) continue;
+        fulfilment = Math.min(fulfilment, Math.min(1, supply[key] / amount));
+      }
+      for (const key of RESOURCE_KEYS) {
+        const amount = (equipment.needs[key] ?? 0) * entry.factories;
+        if (amount > 0) supply[key] = Math.max(0, supply[key] - amount);
+      }
+      if (entry.id === line.id) return 0.6 + 0.4 * fulfilment;
+    }
+    return 1;
   }
 
   resourceNeeds(): Partial<CountryResources> {
@@ -675,7 +980,8 @@ export class GameState {
     const shortages: { resource: keyof CountryResources; needed: number; available: number }[] = [];
     for (const key of RESOURCE_KEYS) {
       const needed = needs[key] ?? 0;
-      if (needed > this.resources[key]) shortages.push({ resource: key, needed, available: this.resources[key] });
+      const available = this.resourceAvailable(key);
+      if (needed > available) shortages.push({ resource: key, needed, available });
     }
     return shortages;
   }
@@ -735,25 +1041,37 @@ export class GameState {
   // ---------------------------------------------------------------- construction
 
   get constructionPerDay(): number {
-    return this.civilianFactories * 5 * (1 + this.constructionSpeed);
+    // Deliberately slower than the old pace: a major power now takes months, not weeks, to raise a
+    // factory, so the construction queue is a real strategic commitment.
+    return this.civilianFactories * 2 * (1 + this.constructionSpeed);
   }
 
   buildingAvailable(buildingId: string): boolean {
     return BUILDINGS.some((building) => building.id === buildingId);
   }
 
-  addConstruction(buildingId: string): ActionResult {
-    const building = buildingById(buildingId);
-    if (!building) return { ok: false, message: 'Unknown building.' };
+  constructionItemSpeed(item: ConstructionState): number {
+    const province = this.world.provinces[item.provinceId];
+    return province ? provinceBuildSpeed(this.provinceDevelopment(province.id)) : 1;
+  }
+
+  addConstruction(buildingId: string, provinceId = this.defaultProvinceId()): ActionResult {
+    const check = this.provinceCanBuild(buildingId, provinceId);
+    if (!check.ok) return check;
+    const building = buildingById(buildingId)!;
+    const province = this.world.provinces[provinceId];
+    const cost = provinceBuildCost(building, province);
     this.construction.push({
       id: this.takeId(),
       buildingId,
-      cost: building.cost,
+      provinceId,
+      cost,
       progress: 0,
       count: 1,
     });
-    this.notify('info', 'Construction queued', `${building.name} added to the construction queue.`, 'construction');
-    return { ok: true, message: 'Construction queued.' };
+    const terrain = terrainDef(province.terrain);
+    this.notify('info', 'Construction queued', `${building.name} queued in ${province.name} (${terrain.name}). ${Math.ceil(cost / Math.max(1, this.constructionPerDay))} days of work.`, 'construction');
+    return { ok: true, message: `${building.name} queued in ${province.name}.` };
   }
 
   cancelConstruction(id: number): void {
@@ -773,7 +1091,7 @@ export class GameState {
   }
 
   constructionDaysLeft(item: ConstructionState): number {
-    return Math.max(0, Math.ceil((item.cost - item.progress) / Math.max(1, this.constructionPerDay)));
+    return Math.max(0, Math.ceil((item.cost - item.progress) / Math.max(1, this.constructionPerDay * this.constructionItemSpeed(item))));
   }
 
   // ---------------------------------------------------------------- advisors
@@ -950,6 +1268,7 @@ export class GameState {
       location: this.country.name,
       commander: commanderIndex,
       templateId: template.id,
+      provinceId: this.defaultProvinceId(),
     });
     this.notify('good', 'Division raised', `${template.name} has joined ${this.commanderName(commanderIndex)}'s command.`, 'military');
     return { ok: true, message: 'Division raised.' };
@@ -1310,7 +1629,7 @@ export class GameState {
   saveGame(): boolean {
     try {
       const data = {
-        version: 1,
+        version: 2,
         tag: this.country.tag,
         date: this.date.toISOString(),
         day: this.day,
@@ -1326,6 +1645,7 @@ export class GameState {
         dockyards: this.dockyards,
         infrastructure: this.infrastructure,
         resources: this.resources,
+        tradeLaw: this.tradeLaw,
         focus: this.focus,
         completedFocuses: [...this.completedFocuses],
         bypassedFocuses: [...this.bypassedFocuses],
@@ -1335,6 +1655,7 @@ export class GameState {
         lines: this.lines,
         stockpile: this.stockpile,
         construction: this.construction,
+        development: [...this.development.entries()],
         nextId: this.nextId,
         advisors: this.advisors,
         divisions: this.divisions,
@@ -1371,7 +1692,7 @@ export class GameState {
   }
 
   restoreSave(data: Record<string, unknown>): boolean {
-    if (!data || data.version !== 1 || data.tag !== this.country.tag) return false;
+    if (!data || (data.version !== 1 && data.version !== 2) || data.tag !== this.country.tag) return false;
     this.date = new Date(String(data.date));
     this.day = Number(data.day ?? 0);
     this.paused = Boolean(data.paused);
@@ -1386,6 +1707,7 @@ export class GameState {
     this.dockyards = Number(data.dockyards ?? 0);
     this.infrastructure = Number(data.infrastructure ?? 0);
     this.resources = { ...(data.resources as CountryResources) };
+    this.tradeLaw = tradeLawById(String(data.tradeLaw ?? ''))?.id ?? 'semi_open';
     this.focus = (data.focus as FocusProgress | null) ?? null;
     this.completedFocuses = new Set(data.completedFocuses as string[]);
     this.bypassedFocuses = new Set((data.bypassedFocuses as string[]) ?? []);
@@ -1394,10 +1716,18 @@ export class GameState {
     this.completedTechs = new Set(data.completedTechs as string[]);
     this.lines = (data.lines as ProductionLineState[]) ?? [];
     this.stockpile = (data.stockpile as Record<string, number>) ?? {};
-    this.construction = (data.construction as ConstructionState[]) ?? [];
+    this.construction = ((data.construction as ConstructionState[]) ?? []).map((item) => ({
+      ...item,
+      provinceId: Number(item.provinceId) > 0 ? item.provinceId : this.defaultProvinceId(),
+    }));
+    this.development = new Map((data.development as [number, ProvinceDevelopment][]) ?? []);
+    if (this.development.size === 0) this.seedProvinceDevelopment();
     this.nextId = Number(data.nextId ?? 1);
     this.advisors = (data.advisors as Record<AdvisorSlot, string | null>) ?? this.advisors;
-    this.divisions = (data.divisions as DivisionState[]) ?? [];
+    this.divisions = ((data.divisions as DivisionState[]) ?? []).map((division) => ({
+      ...division,
+      provinceId: division.provinceId ?? this.defaultProvinceId(),
+    }));
     this.commanders = (data.commanders as CommanderDef[]) ?? [];
     this.notifications = (data.notifications as NotificationEntry[]) ?? [];
     this.unread = Number(data.unread ?? 0);
@@ -1512,15 +1842,14 @@ export class GameState {
   }
 
   private advanceProduction(): void {
-    const shortages = this.resourceShortages();
-    const penalty = shortages.length > 0 ? 0.6 : 1;
     for (const line of this.lines) {
       if (line.paused || line.factories === 0) continue;
       const equipment = this.equipmentOf(line);
       if (!equipment) continue;
       const efficiencyCap = 0.55 + (this.nationalRates.productionEfficiency ?? 0);
       line.efficiency = Math.min(efficiencyCap, line.efficiency + 0.0018);
-      line.progress += this.lineOutput(line) * equipment.cost * penalty;
+      // lineOutput already includes the priority-based resource allocation factor.
+      line.progress += this.lineOutput(line) * equipment.cost;
       while (line.progress >= equipment.cost) {
         line.progress -= equipment.cost;
         line.produced += 1;
@@ -1532,20 +1861,28 @@ export class GameState {
   private advanceConstruction(): void {
     if (this.construction.length === 0) return;
     const item = this.construction[0];
-    item.progress += this.constructionPerDay;
+    item.progress += this.constructionPerDay * this.constructionItemSpeed(item);
     if (item.progress < item.cost) return;
     const building = buildingById(item.buildingId);
     this.construction.shift();
     if (!building) return;
-    if (building.id === 'anti_air') {
-      this.stability = clamp(this.stability + 0.01);
+    const province = this.world.provinces[item.provinceId];
+    const development = this.provinceDevelopment(item.provinceId);
+    if (building.id === 'infrastructure') {
+      development.infrastructure = Math.min(5, development.infrastructure + 1);
+      this.infrastructure = clamp(this.infrastructure + 1, 0, 10);
     } else {
-      const resource = building.resource;
-      if (resource === 'infrastructure') this.infrastructure = clamp(this.infrastructure + 1, 0, 10);
-      else if (resource === 'civilianFactories') this.civilianFactories += 1;
-      else if (resource === 'militaryFactories') this.militaryFactories += 1;
-      else if (resource === 'dockyards') this.dockyards += 1;
+      development.buildings[building.id] = (development.buildings[building.id] ?? 0) + 1;
+      if (building.id === 'anti_air') {
+        this.stability = clamp(this.stability + 0.01);
+      } else if (building.resource === 'civilianFactories') {
+        this.civilianFactories += 1;
+      } else if (building.resource === 'militaryFactories') {
+        this.militaryFactories += 1;
+      } else if (building.resource === 'dockyards') {
+        this.dockyards += 1;
+      }
     }
-    this.notify('good', 'Construction complete', `${building.name} finished. ${building.effect}.`, 'construction');
+    this.notify('good', 'Construction complete', `${building.name} finished in ${province?.name ?? 'the national reserve'}. ${building.effect}.`, 'construction');
   }
 }

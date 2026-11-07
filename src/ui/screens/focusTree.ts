@@ -177,7 +177,6 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   innerCircle.append(circleHead, circleGroups, circleFoot);
   innerCircle.addEventListener('pointerdown', (event) => event.stopPropagation());
   innerCircle.addEventListener('wheel', (event) => event.stopPropagation(), { passive: true });
-  main.append(innerCircle);
 
   layout.append(main);
 
@@ -187,6 +186,9 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
   const detailsBody = div('if-focus-details__body');
   const detailsFoot = div('if-focus-details__foot');
   details.append(detailsHead, detailsBody, detailsFoot);
+  // Keep the cabinet summary in the side rail. As a floating panel over the canvas it covered
+  // focus nodes and made them impossible to click at the fitted zoom level.
+  details.insertBefore(innerCircle, detailsFoot);
   layout.append(details);
   frame.body.append(layout);
 
@@ -314,6 +316,7 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     name.className = 'if-focus-node__name';
     name.textContent = focus.name;
     button.append(tile, name);
+    button.addEventListener('pointerdown', (event) => event.stopPropagation());
     button.addEventListener('click', (event) => {
       if (dragged) {
         event.preventDefault();
@@ -390,6 +393,10 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
 
   main.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
+    // Panning used to capture the pointer on every press, including presses on a focus tile.
+    // The browser then retargeted pointerup/click to the canvas, so nodes behaved like a picture.
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('button, input, select, .if-inner-circle, .if-zoomctl, .if-treelegend')) return;
     dragging = true;
     dragged = false;
     lastX = event.clientX;
@@ -544,11 +551,11 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
     }
 
     detailsBody.append(sectionLabel('Rewards'));
-    detailsBody.append(effectList(focus.effects));
+    detailsBody.append(effectList(focus.effects, 'No effects recorded.', (effect) => state.effectPlacement(effect)));
 
     if ((focus.consequences ?? []).length > 0) {
       detailsBody.append(sectionLabel('Possible consequences'));
-      detailsBody.append(effectList(focus.consequences ?? []));
+      detailsBody.append(effectList(focus.consequences ?? [], 'No effects recorded.', (effect) => state.effectPlacement(effect)));
     }
 
     const connected = connectedFocuses(focus);
@@ -598,10 +605,12 @@ export function mountFocusTree(ctx: ScreenContext): Screen {
         ctx.rerender();
       }));
     } else {
-      const startBtn = button(state.focus ? 'Another focus in progress' : 'Start Focus', 'if-btn if-btn--gold if-btn--block', () => startSelected(focus.id));
+      const switching = Boolean(state.focus && state.focus.id !== focus.id);
+      const startBtn = button(switching ? 'Switch focus' : 'Start focus', 'if-btn if-btn--gold if-btn--block', () => startSelected(focus.id));
       startBtn.disabled = !check.ok;
-      withTip(startBtn, check.ok ? `Begin ${focus.name}` : check.message);
+      withTip(startBtn, check.ok ? (switching ? `Abandon the current focus and begin ${focus.name}` : `Begin ${focus.name}`) : check.message);
       detailsFoot.append(startBtn);
+      if (switching) detailsFoot.append(div('if-hint', `The focus in progress will be abandoned; its progress and political power are lost.`));
       if (!check.ok) detailsFoot.append(div('if-hint', check.message));
       if (state.focusState(focus.id) === 'exclusive') detailsFoot.append(div('if-hint', `Blocked by ${state.focusBlockedBy(focus.id) ?? 'a mutually exclusive focus'}.`));
       if (focus.bypassable && status === 'available') {

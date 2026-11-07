@@ -4,7 +4,8 @@ import { createGenericCountry } from '../../data/genericCountry';
 import { factionOf } from '../../data/geopolitics';
 import { button, div, icon, meter, panel, portrait, sectionLabel, span, tag, withTip } from '../components';
 import type { Screen, ScreenContext } from '../screen';
-import { flag, ideologyName, screenFrame } from '../screen';
+import { ideologyName, screenFrame } from '../screen';
+import { flagImage } from '../flags';
 import { fmt, pct, relationTone } from '../format';
 
 // Diplomacy: a searchable country list beside a full dossier with relations, treaties and the
@@ -136,7 +137,7 @@ export function mountDiplomacy(ctx: ScreenContext): Screen {
       row.type = 'button';
       row.className = `if-countryrow${ui!.detailId === country.id ? ' is-active' : ''}`;
       const def = defOf(country.id);
-      const flagEl = flag(country.color, def.accent, 'if-flagmini');
+      const flagEl = flagImage(country, 'if-flagmini');
       const body = div('');
       body.append(span('if-countryrow__name', country.name));
       const sub = div('if-countryrow__sub');
@@ -185,7 +186,7 @@ export function mountDiplomacy(ctx: ScreenContext): Screen {
     if (heading) heading.textContent = country.name;
 
     const head = div('if-dossier__head');
-    head.append(flag(country.color, def.accent, 'if-flag if-flag--lg'));
+    head.append(flagImage(country, 'if-flag if-flag--lg'));
     const headInfo = div('');
     const title = document.createElement('h3');
     title.className = 'if-dossier__name';

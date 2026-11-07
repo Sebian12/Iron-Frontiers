@@ -1,4 +1,6 @@
 import type { Country, Province, State, World } from '../sim/world';
+import { terrainForProvince } from '../sim/terrain';
+import { flagFileName } from './countryFlags';
 
 interface MapFile {
   width: number;
@@ -37,8 +39,39 @@ export async function loadWorld(): Promise<World> {
     );
   }
 
-  // Province 0 is the sea so that province ids can be used as array indices.
-  const provinces: Province[] = [{ id: 0, name: 'Sea', state: 0, x: 0, y: 0, owner: 0, neighbors: [] }, ...meta.provinces];
+  // A province is coastal when at least one of its pixels touches a sea pixel. This is computed
+  // once from the same bitmap used for map picking, so dockyard placement cannot lie about a
+  // landlocked province. Edge pixels are treated as sea.
+  const coastal = new Uint8Array(meta.provinces.length + 1);
+  const width = meta.width;
+  const height = meta.height;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const index = y * width + x;
+      const id = ids[index];
+      if (id === 0) continue;
+      const touchesSea =
+        x === 0 || y === 0 || x === width - 1 || y === height - 1 ||
+        ids[index - 1] === 0 || ids[index + 1] === 0 ||
+        ids[index - width] === 0 || ids[index + width] === 0;
+      if (touchesSea) coastal[id] = 1;
+    }
+  }
 
-  return { width: meta.width, height: meta.height, ids, states: meta.states, provinces, countries: meta.countries };
+  // Province 0 is the sea so that province ids can be used as array indices. The JSON has no
+  // terrain layer, so every province gets a stable type derived from its name, id and owner.
+  const provinces: Province[] = [
+    { id: 0, name: 'Sea', state: 0, x: 0, y: 0, owner: 0, neighbors: [], coastal: false, terrain: 'plains' },
+    ...meta.provinces.map((province) => ({
+      ...province,
+      coastal: coastal[province.id] === 1,
+      terrain: terrainForProvince(province, meta.countries[province.owner]?.name ?? ''),
+    })),
+  ];
+
+  const countries: Country[] = meta.countries.map((country) => (
+    country.id === 0 ? country : { ...country, flag: flagFileName(country.name) }
+  ));
+
+  return { width: meta.width, height: meta.height, ids, states: meta.states, provinces, countries };
 }

@@ -1,10 +1,10 @@
 import type { ContentBundle } from '../sim/content';
 import type { GameState } from '../sim/gameState';
-import { isTextField, button, div, icon, modal, span, toast, withTip } from './components';
+import { isTextField, button, div, icon, modal, span, toast, withTip, type ModalHandle } from './components';
 import { installIcons } from './icons';
 import { compact, fmt, pct } from './format';
 import type { MapBridge, Screen, ScreenContext, ScreenId } from './screen';
-import { flag } from './screen';
+import { flagImage } from './flags';
 import { mountOverview } from './screens/overview';
 import { mountPolitics } from './screens/politics';
 import { mountFocusTree } from './screens/focusTree';
@@ -16,6 +16,10 @@ import { mountDiplomacy } from './screens/diplomacy';
 import { mountIntelligence } from './screens/intelligence';
 import { mountDecisions } from './screens/decisions';
 import { mountHistory } from './screens/history';
+import { mountTrade } from './screens/trade';
+import { getSettings } from './settings';
+import { openProvincePanel } from './provincePanel';
+import { hideTipNow } from './tooltip';
 
 // Game shell: top bar, navigation, bottom clock, screen router, simulation clock and the shared
 // event modal. Screens are mounted into the stage and rebuilt through the ScreenContext.
@@ -34,6 +38,7 @@ const NAV: NavEntry[] = [
   { id: 'research', label: 'Research', icon: 'flask', hotkey: '4' },
   { id: 'production', label: 'Industry', icon: 'gear', hotkey: '5' },
   { id: 'construction', label: 'Economy', icon: 'crane', hotkey: '6' },
+  { id: 'trade', label: 'Trade', icon: 'exchange', hotkey: 'T' },
   { id: 'military', label: 'Army', icon: 'helmet', hotkey: '7' },
   { id: 'diplomacy', label: 'Diplomacy', icon: 'handshake', hotkey: '8' },
   { id: 'intelligence', label: 'Intel', icon: 'eye', hotkey: '9' },
@@ -48,6 +53,7 @@ const MOUNTS: Record<ScreenId, (ctx: ScreenContext) => Screen> = {
   research: mountResearch,
   production: mountProduction,
   construction: mountConstruction,
+  trade: mountTrade,
   military: mountMilitary,
   diplomacy: mountDiplomacy,
   intelligence: mountIntelligence,
@@ -63,6 +69,10 @@ export interface GameShell {
   refresh(): void;
   dispose(): void;
   currentScreen(): ScreenId;
+  /** Selects a province without opening a modal. */
+  selectProvince(id: number): void;
+  /** Opens (or closes, with 0) the province sheet and selects the province on the map. */
+  showProvince(id: number): void;
 }
 
 export function createGameShell(state: GameState, content: ContentBundle, map: MapBridge): GameShell {
@@ -81,7 +91,7 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
   countryButton.type = 'button';
   countryButton.className = 'if-country-block';
   const mapCountry = state.world.countries[state.countryId];
-  countryButton.append(flag(mapCountry.color, content.def.accent));
+  countryButton.append(flagImage(mapCountry));
   const countryName = div('if-country-name');
   const strong = document.createElement('strong');
   strong.textContent = content.def.name;
@@ -201,6 +211,7 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
   // ---------------------------------------------------------------- screen hosting
   let currentId: ScreenId = 'overview';
   let current: Screen | null = null;
+  let provinceModal: ModalHandle | null = null;
 
   const ctx: ScreenContext = {
     state,
@@ -213,9 +224,38 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
       state.selectedCountryId = countryId;
       open('diplomacy');
     },
+    openProvince: (provinceId) => showProvince(provinceId),
   };
 
+  function selectProvince(provinceId: number): void {
+    hideTipNow();
+    state.selectedProvinceId = provinceId;
+    map.selectProvince(provinceId);
+    current?.refresh?.();
+    updateHud();
+  }
+
+  function showProvince(provinceId: number): void {
+    selectProvince(provinceId);
+    if (provinceModal) {
+      provinceModal.close();
+      provinceModal = null;
+    }
+    if (provinceId > 0) {
+      provinceModal = openProvincePanel(ctx, provinceId, () => {
+        provinceModal = null;
+      });
+    }
+    current?.refresh?.();
+    updateHud();
+  }
+
   function open(id: ScreenId): void {
+    hideTipNow();
+    if (provinceModal) {
+      provinceModal.close();
+      provinceModal = null;
+    }
     if (current) {
       current.destroy?.();
       current.element.remove();
@@ -283,9 +323,9 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
     }
     for (const entry of state.notifications.slice(0, 40)) {
       const row = div(`if-notifitem if-notifitem--${entry.kind}`);
-      const head = div('if-row');
-      head.append(span('if-notifitem__title', entry.title), span('if-hint', entry.date));
-      row.append(head, span('if-hint', entry.text));
+      const head = div('if-notifitem__head');
+      head.append(span('if-notifitem__title', entry.title), span('if-notifitem__date', entry.date));
+      row.append(head, div('if-notifitem__text', entry.text));
       if (entry.screen) {
         const link = button('Open', 'if-btn if-btn--sm if-btn--ghost', () => {
           handle.close();
@@ -311,8 +351,12 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
   function showPendingEvent(): void {
     const event = state.pendingEvent;
     if (!event || eventOpen) return;
+    if (provinceModal) {
+      provinceModal.close();
+      provinceModal = null;
+    }
     eventOpen = true;
-    state.paused = true;
+    if (getSettings().autoPauseEvents) state.paused = true;
     syncSpeed();
     const body = div('if-eventbody');
     body.append(div('if-eventbody__category', event.category), div('if-eventbody__text', event.body));
@@ -372,13 +416,16 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
       subtitle: `${content.def.name} · ${state.dateLabel}`,
       iconName: 'gov',
       body,
-      width: 460,
+      width: 540,
       actions: [
         { label: 'Resume', className: 'if-btn--gold' },
         {
           label: 'Save campaign',
           className: 'if-btn--ghost',
-          onClick: () => toast(state.saveGame() ? 'Campaign saved to this browser.' : 'The campaign could not be saved.', state.saveGame() ? 'good' : 'bad'),
+          onClick: () => {
+            const saved = state.saveGame();
+            toast(saved ? 'Campaign saved to this browser.' : 'The campaign could not be saved.', saved ? 'good' : 'bad');
+          },
         },
         {
           label: 'Load campaign',
@@ -432,14 +479,9 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
 
   function onKey(event: KeyboardEvent): void {
     if (isTextField(event.target) || document.querySelector('.if-modal-backdrop')) return;
-    const index = '1234567890'.indexOf(event.key);
-    if (index >= 0) {
-      open(NAV[index].id);
-      event.preventDefault();
-      return;
-    }
-    if (event.key.toLowerCase() === 'h') {
-      open('history');
+    const navEntry = NAV.find((entry) => entry.hotkey.toLowerCase() === event.key.toLowerCase());
+    if (navEntry) {
+      open(navEntry.id);
       event.preventDefault();
       return;
     }
@@ -469,6 +511,8 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
   return {
     element: root,
     open,
+    selectProvince,
+    showProvince,
     refresh: () => {
       updateHud();
       current?.refresh?.();
@@ -477,6 +521,7 @@ export function createGameShell(state: GameState, content: ContentBundle, map: M
     dispose: () => {
       window.removeEventListener('keydown', onKey);
       cancelAnimationFrame(frameHandle);
+      provinceModal?.close();
       current?.destroy?.();
       root.remove();
     },
